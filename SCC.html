@@ -173,6 +173,108 @@
       margin-top: 2px;
     }
     input[type="date"] { color-scheme: dark; }
+
+    /* Filtro periodo grafici */
+    .filtro-periodo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .filtro-periodo span {
+      font-size: 13px;
+      color: #a0a0a0;
+      margin-right: 4px;
+    }
+    .filtro-btn {
+      background: #2a2a2a;
+      color: #c0c0c0;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .filtro-btn:hover { background: #333; color: #fff; }
+    .filtro-btn.active {
+      background: #1e3a5f;
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    /* Obiettivo e previsione */
+    .obiettivo-card .obiettivo-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+    .obiettivo-card label {
+      display: block;
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 4px;
+    }
+    .obiettivo-card input[type="number"] {
+      width: 160px;
+    }
+    .progress-wrap {
+      margin-top: 8px;
+    }
+    .progress-bar-bg {
+      height: 14px;
+      background: #2a2a2a;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #3a3a3a;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 7px;
+      transition: width 0.4s ease;
+      background: linear-gradient(90deg, #3b82f6, #4ade80);
+    }
+    .progress-bar-fill.over {
+      background: linear-gradient(90deg, #4ade80, #facc15);
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-top: 6px;
+    }
+    .previsione-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .previsione-item {
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .previsione-item .lab {
+      font-size: 11px;
+      color: #a0a0a0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .previsione-item .val {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .previsione-note {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -188,9 +290,44 @@
   <!-- Riepilogo -->
   <div class="summary-grid" id="riepilogo"></div>
 
+  <!-- Obiettivo e previsione -->
+  <div class="card obiettivo-card">
+    <h3>Obiettivo e previsione</h3>
+    <div class="obiettivo-row">
+      <div>
+        <label for="inputObiettivo">Obiettivo di saldo (€)</label>
+        <input type="number" id="inputObiettivo" placeholder="es. 50000" step="1" min="0">
+      </div>
+      <button type="button" onclick="salvaObiettivo()">Salva obiettivo</button>
+      <button type="button" class="btn-secondary" onclick="rimuoviObiettivo()">Rimuovi</button>
+    </div>
+    <div id="obiettivoProgresso" style="display:none;">
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="progressTesto">—</span>
+          <span id="progressPerc">0%</span>
+        </div>
+      </div>
+    </div>
+    <div id="bloccoPrevisione">
+      <div class="previsione-grid" id="previsioneGrid"></div>
+      <p class="previsione-note" id="previsioneNota"></p>
+    </div>
+  </div>
+
   <!-- Grafico Andamento -->
   <div class="card">
     <h3>Andamento del Saldo</h3>
+    <div class="filtro-periodo" id="filtroPeriodo">
+      <span>Periodo:</span>
+      <button type="button" class="filtro-btn active" data-periodo="tutto" onclick="impostaFiltroPeriodo('tutto')">Tutto</button>
+      <button type="button" class="filtro-btn" data-periodo="3m" onclick="impostaFiltroPeriodo('3m')">Ultimi 3 mesi</button>
+      <button type="button" class="filtro-btn" data-periodo="6m" onclick="impostaFiltroPeriodo('6m')">Ultimi 6 mesi</button>
+      <button type="button" class="filtro-btn" data-periodo="12m" onclick="impostaFiltroPeriodo('12m')">Ultimo anno</button>
+    </div>
     <div class="chart-container">
       <canvas id="graficoSaldo"></canvas>
     </div>
@@ -297,6 +434,9 @@
     let mioGraficoDiff = null;
     let sincronizzandoDaFirebase = false; // evita loop quando riceviamo dati da Firebase
     let firebasePronto = false;
+    let obiettivoSaldo = null; // numero o null
+    let filtroPeriodo = 'tutto'; // 'tutto' | '3m' | '6m' | '12m'
+    const refImpostazioni = db.ref('saldo-conto-corrente/impostazioni');
 
     const MESI = [
       'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
@@ -357,7 +497,187 @@
     function salvaDatiLocali() {
       try {
         localStorage.setItem('conto_rilevazioni_saldo', JSON.stringify(rilevazioni));
+        if (obiettivoSaldo !== null && isFinite(obiettivoSaldo)) {
+          localStorage.setItem('conto_obiettivo_saldo', String(obiettivoSaldo));
+        } else {
+          localStorage.removeItem('conto_obiettivo_saldo');
+        }
       } catch (e) { /* ignore */ }
+    }
+
+    function caricaObiettivoLocale() {
+      try {
+        const v = localStorage.getItem('conto_obiettivo_saldo');
+        if (v !== null && v !== '') {
+          const n = Math.round(parseFloat(v));
+          if (isFinite(n) && n > 0) obiettivoSaldo = n;
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    function salvaObiettivoSuFirebase() {
+      if (sincronizzandoDaFirebase) return;
+      const payload = { obiettivo: obiettivoSaldo };
+      refImpostazioni.set(payload).catch(err => console.error('Errore salvataggio obiettivo:', err));
+      salvaDatiLocali();
+    }
+
+    function salvaObiettivo() {
+      const raw = document.getElementById('inputObiettivo').value;
+      const n = Math.round(parseFloat(raw));
+      if (!isFinite(n) || n <= 0) {
+        alert('Inserisci un obiettivo valido (numero maggiore di zero).');
+        return;
+      }
+      obiettivoSaldo = n;
+      salvaObiettivoSuFirebase();
+      renderObiettivoEPrevisione();
+    }
+
+    function rimuoviObiettivo() {
+      obiettivoSaldo = null;
+      document.getElementById('inputObiettivo').value = '';
+      salvaObiettivoSuFirebase();
+      renderObiettivoEPrevisione();
+    }
+
+    function giorniTra(d1, d2) {
+      const a = new Date(d1 + 'T00:00:00Z');
+      const b = new Date(d2 + 'T00:00:00Z');
+      return Math.round((b - a) / 86400000);
+    }
+
+    /** Media variazione mensile stimata dalle rilevazioni (eur per mese di 30 giorni) */
+    function mediaVariazioneMensile() {
+      if (rilevazioni.length < 2) return null;
+      const prima = rilevazioni[0];
+      const ultima = rilevazioni[rilevazioni.length - 1];
+      const giorni = giorniTra(prima.data, ultima.data);
+      if (giorni <= 0) return null;
+      const delta = ultima.saldo - prima.saldo;
+      return (delta / giorni) * 30;
+    }
+
+    function calcolaPrevisioni() {
+      const mediaMese = mediaVariazioneMensile();
+      if (mediaMese === null) return null;
+      const ultima = rilevazioni[rilevazioni.length - 1];
+      const mesi = [1, 3, 6];
+      return mesi.map(m => ({
+        mesi: m,
+        saldo: Math.round(ultima.saldo + mediaMese * m),
+        mediaMese: Math.round(mediaMese)
+      }));
+    }
+
+    function dataLimitePeriodo(periodo) {
+      if (periodo === 'tutto') return null;
+      const mesi = periodo === '3m' ? 3 : periodo === '6m' ? 6 : 12;
+      const d = new Date();
+      d.setMonth(d.getMonth() - mesi);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function rilevazioniFiltratePerGrafici() {
+      const limite = dataLimitePeriodo(filtroPeriodo);
+      if (!limite) return rilevazioni.slice();
+      const filtrate = rilevazioni.filter(r => r.data >= limite);
+      // se il filtro taglia tutto, mostra almeno l'ultima
+      if (filtrate.length === 0 && rilevazioni.length > 0) {
+        return [rilevazioni[rilevazioni.length - 1]];
+      }
+      return filtrate;
+    }
+
+    function impostaFiltroPeriodo(periodo) {
+      filtroPeriodo = periodo;
+      document.querySelectorAll('#filtroPeriodo .filtro-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-periodo') === periodo);
+      });
+      // aggiorna solo i grafici, non tutta la tabella
+      const lista = rilevazioniFiltratePerGrafici();
+      const etichette = [];
+      const datiSaldo = [];
+      const datiDiff = [];
+      lista.forEach((r, index) => {
+        etichette.push(formattaDataEstesa(r.data));
+        datiSaldo.push(r.saldo);
+        if (index === 0) {
+          // prima barra: se non è la prima assoluta, calcola diff rispetto al punto precedente non filtrato
+          const idxGlobale = rilevazioni.findIndex(x => x.id === r.id);
+          if (idxGlobale > 0) {
+            datiDiff.push(r.saldo - rilevazioni[idxGlobale - 1].saldo);
+          } else {
+            datiDiff.push(null);
+          }
+        } else {
+          datiDiff.push(r.saldo - lista[index - 1].saldo);
+        }
+      });
+      renderGrafico(etichette, datiSaldo);
+      renderGraficoDifferenze(etichette, datiDiff);
+    }
+
+    function renderObiettivoEPrevisione() {
+      const input = document.getElementById('inputObiettivo');
+      const boxProg = document.getElementById('obiettivoProgresso');
+      const fill = document.getElementById('progressFill');
+      const testo = document.getElementById('progressTesto');
+      const percEl = document.getElementById('progressPerc');
+      const grid = document.getElementById('previsioneGrid');
+      const nota = document.getElementById('previsioneNota');
+
+      if (obiettivoSaldo !== null && isFinite(obiettivoSaldo)) {
+        input.value = obiettivoSaldo;
+      }
+
+      if (rilevazioni.length === 0) {
+        boxProg.style.display = 'none';
+        grid.innerHTML = '';
+        nota.textContent = 'Aggiungi almeno due rilevazioni per vedere le previsioni.';
+        return;
+      }
+
+      const attuale = rilevazioni[rilevazioni.length - 1].saldo;
+      const eur = n => n.toLocaleString('it-IT') + ' €';
+      const eurSegno = n => (n > 0 ? '+' : '') + eur(n);
+
+      if (obiettivoSaldo !== null && isFinite(obiettivoSaldo) && obiettivoSaldo > 0) {
+        boxProg.style.display = '';
+        let pct = Math.round((attuale / obiettivoSaldo) * 1000) / 10;
+        if (pct < 0) pct = 0;
+        const capped = Math.min(pct, 100);
+        fill.style.width = capped + '%';
+        fill.classList.toggle('over', pct >= 100);
+        const manca = obiettivoSaldo - attuale;
+        if (manca > 0) {
+          testo.textContent = `Mancano ${eur(manca)} per raggiungere l'obiettivo`;
+        } else if (manca === 0) {
+          testo.textContent = 'Obiettivo raggiunto esattamente';
+        } else {
+          testo.textContent = `Obiettivo superato di ${eur(-manca)}`;
+        }
+        percEl.textContent = pct + '%';
+      } else {
+        boxProg.style.display = 'none';
+      }
+
+      const prev = calcolaPrevisioni();
+      if (!prev) {
+        grid.innerHTML = '';
+        nota.textContent = 'Servono almeno due rilevazioni in date diverse per stimare la tendenza.';
+        return;
+      }
+      const media = prev[0].mediaMese;
+      grid.innerHTML = prev.map(p => `
+        <div class="previsione-item">
+          <div class="lab">Tra ${p.mesi} mes${p.mesi === 1 ? 'e' : 'i'}</div>
+          <div class="val" style="color:${p.saldo >= attuale ? '#4ade80' : '#f87171'}">${eur(p.saldo)}</div>
+        </div>`).join('');
+      nota.textContent = `Stima basata sulla media di ${eurSegno(media)} al mese (dalla prima all'ultima rilevazione). È solo una proiezione, non una garanzia.`;
     }
 
     // ========== SALVATAGGIO SU FIREBASE ==========
@@ -367,7 +687,7 @@
       salvaDatiLocali();
       aggiornaStato('Sincronizzazione in corso...', '#facc15');
       refRilevazioni.set(rilevazioni)
-        .then(() => aggiornaStato('Sincronizzati in tempo reale ✓', '#4ade80'))
+        .then(() => aggiornaStato('Sincronizzato in tempo reale ✓', '#4ade80'))
         .catch(err => {
           console.error(err);
           aggiornaStato('Errore di sincronizzazione (dati salvati in locale)', '#f87171');
@@ -411,7 +731,7 @@
         firebasePronto = true;
         aggiornaInterfaccia();
         sincronizzandoDaFirebase = false;
-        aggiornaStato('Sincronizzati in tempo reale ✓', '#4ade80');
+        aggiornaStato('Sincronizzato in tempo reale ✓', '#4ade80');
       }, err => {
         console.error('Errore listener Firebase:', err);
         aggiornaStato('Connessione Firebase non disponibile – uso dati locali', '#f87171');
@@ -666,8 +986,9 @@
       });
 
       renderRiepilogo();
-      renderGrafico(etichetteGrafico, datiGrafico);
-      renderGraficoDifferenze(etichetteGrafico, datiDifferenze);
+      renderObiettivoEPrevisione();
+      // grafici rispettano il filtro periodo
+      impostaFiltroPeriodo(filtroPeriodo);
     }
 
     function renderGrafico(etichette, dati) {
@@ -785,8 +1106,32 @@
       });
     }
 
+    // Ascolto impostazioni (obiettivo) in tempo reale
+    function avviaSincronizzazioneImpostazioni() {
+      refImpostazioni.on('value', snapshot => {
+        const val = snapshot.val();
+        if (val && typeof val.obiettivo === 'number' && isFinite(val.obiettivo) && val.obiettivo > 0) {
+          obiettivoSaldo = Math.round(val.obiettivo);
+        } else if (val && val.obiettivo === null) {
+          obiettivoSaldo = null;
+        }
+        // se Firebase non ha ancora nulla, tieni eventuale valore locale
+        const input = document.getElementById('inputObiettivo');
+        if (input) {
+          input.value = obiettivoSaldo !== null ? obiettivoSaldo : '';
+        }
+        renderObiettivoEPrevisione();
+      }, err => {
+        console.error('Errore listener impostazioni:', err);
+        caricaObiettivoLocale();
+        renderObiettivoEPrevisione();
+      });
+    }
+
     // Avvio: ascolta Firebase in tempo reale
+    caricaObiettivoLocale();
     avviaSincronizzazione();
+    avviaSincronizzazioneImpostazioni();
   </script>
 </body>
 </html>
