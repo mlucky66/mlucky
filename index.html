@@ -16653,40 +16653,54 @@ function drawGrass(){
   const v=ctx.createRadialGradient(FIELD_W/2,FIELD_H/2,FIELD_H*0.35,FIELD_W/2,FIELD_H/2,FIELD_W*0.7);
   v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,0.3)");ctx.fillStyle=v;ctx.fillRect(0,0,FIELD_W,FIELD_H);
 }
+/* ---------- geometria del campo (proporzioni del campo di riferimento, in unità: lunghezza 932 × larghezza 604) ---------- */
+const PITCH={W:932,H:604,PEN_D:184,PEN_H:443,GA_D:61.5,GA_H:208,SPOT:122.5,R:103,GOAL_D:28,GOAL_W:78.5,CORNER:20};
+function fieldGeo(){
+  if(fieldType==="full"){const m=28,k=(FIELD_H-2*m)/PITCH.H,pw=PITCH.W*k,x0=(FIELD_W-pw)/2;return{k,x0,x1:x0+pw,y0:m,y1:FIELD_H-m};}
+  if(fieldType==="half"){const m=22,k=(FIELD_W-2*m)/PITCH.H,pw=PITCH.H*k,yg=FIELD_H-m-PITCH.GOAL_D*k,x0=(FIELD_W-pw)/2;return{k,x0,x1:x0+pw,y0:yg-PITCH.W/2*k,y1:yg};}
+  if(fieldType==="area"){const k=(FIELD_W-68)/PITCH.PEN_H;return{k,x0:14,x1:FIELD_W-14,y0:14,y1:FIELD_H-24-PITCH.GOAL_D*k};}
+  return null;
+}
+/* area di rigore, area piccola, dischetto, semicerchio e porta: ox,oy = centro della linea di porta, rot = verso il campo */
+function drawGoalEnd(ox,oy,rot,k){
+  const P=PITCH;ctx.save();ctx.translate(ox,oy);ctx.rotate(rot);
+  ctx.strokeRect(0,-P.PEN_H*k/2,P.PEN_D*k,P.PEN_H*k);
+  ctx.strokeRect(0,-P.GA_H*k/2,P.GA_D*k,P.GA_H*k);
+  ctx.beginPath();ctx.arc(P.SPOT*k,0,3.5,0,Math.PI*2);ctx.fill();
+  const th=Math.acos((P.PEN_D-P.SPOT)/P.R);ctx.beginPath();ctx.arc(P.SPOT*k,0,P.R*k,-th,th);ctx.stroke();
+  const lw=ctx.lineWidth;ctx.lineWidth=3.5;ctx.strokeRect(-P.GOAL_D*k,-P.GOAL_W*k/2,P.GOAL_D*k,P.GOAL_W*k);ctx.lineWidth=lw;
+  ctx.restore();
+}
+function drawCorners(g,k,top){
+  const c=PITCH.CORNER*k,PI=Math.PI;
+  if(top){ctx.beginPath();ctx.arc(g.x0,g.y0,c,0,PI/2);ctx.stroke();ctx.beginPath();ctx.arc(g.x1,g.y0,c,PI/2,PI);ctx.stroke();}
+  ctx.beginPath();ctx.arc(g.x0,g.y1,c,-PI/2,0);ctx.stroke();
+  ctx.beginPath();ctx.arc(g.x1,g.y1,c,PI,PI*1.5);ctx.stroke();
+}
 function drawField(){
   ctx.clearRect(0,0,FIELD_W,FIELD_H);if(fieldType==="image"){drawBg();return;}drawGrass();
   if(fieldType==="empty")return;
   ctx.save();ctx.shadowColor="rgba(0,0,0,.35)";ctx.shadowBlur=2.5;ctx.shadowOffsetY=1;
   ctx.strokeStyle=LINE_COLOR;ctx.fillStyle=LINE_COLOR;ctx.lineWidth=LINE_WIDTH;
   if(fieldType==="full"){
-    const m=28;
-    ctx.strokeRect(m,m,FIELD_W-2*m,FIELD_H-2*m);
-    ctx.beginPath();ctx.moveTo(FIELD_W/2,m);ctx.lineTo(FIELD_W/2,FIELD_H-m);ctx.stroke();
-    ctx.beginPath();ctx.arc(FIELD_W/2,FIELD_H/2,65,0,Math.PI*2);ctx.stroke();
-    ctx.beginPath();ctx.arc(FIELD_W/2,FIELD_H/2,3.5,0,Math.PI*2);ctx.fill();
-    const boxW=100,boxH=220,smallW=36,smallH=100;
-    ctx.strokeRect(m,FIELD_H/2-boxH/2,boxW,boxH);ctx.strokeRect(m,FIELD_H/2-smallH/2,smallW,smallH);
-    ctx.strokeRect(FIELD_W-m-boxW,FIELD_H/2-boxH/2,boxW,boxH);ctx.strokeRect(FIELD_W-m-smallW,FIELD_H/2-smallH/2,smallW,smallH);
-    ctx.beginPath();ctx.arc(m+70,FIELD_H/2,3,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(FIELD_W-m-70,FIELD_H/2,3,0,Math.PI*2);ctx.fill();
-    ctx.lineWidth=3.5;ctx.strokeRect(m-16,FIELD_H/2-32,16,64);ctx.strokeRect(FIELD_W-m,FIELD_H/2-32,16,64);ctx.lineWidth=LINE_WIDTH;
-    [[m,m],[FIELD_W-m,m],[m,FIELD_H-m],[FIELD_W-m,FIELD_H-m]].forEach(([cx,cy],i)=>{ctx.beginPath();const a=[0,Math.PI/2,-Math.PI/2,Math.PI][i];ctx.arc(cx,cy,10,a,a+Math.PI/2);ctx.stroke();});
+    const g=fieldGeo(),k=g.k,cy=FIELD_H/2,cx=FIELD_W/2;
+    ctx.strokeRect(g.x0,g.y0,g.x1-g.x0,g.y1-g.y0);
+    ctx.beginPath();ctx.moveTo(cx,g.y0);ctx.lineTo(cx,g.y1);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,PITCH.R*k,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,3.5,0,Math.PI*2);ctx.fill();
+    drawGoalEnd(g.x0,cy,0,k);drawGoalEnd(g.x1,cy,Math.PI,k);
+    drawCorners(g,k,true);
   } else if(fieldType==="half"){
-    const m=22,cx=FIELD_W/2,goalY=FIELD_H-m;
-    ctx.strokeRect(m,m,FIELD_W-2*m,FIELD_H-2*m);
-    ctx.beginPath();ctx.moveTo(m,m);ctx.lineTo(FIELD_W-m,m);ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,m,68,0,Math.PI);ctx.stroke();
-    ctx.strokeRect(cx-125,goalY-105,250,105);ctx.strokeRect(cx-57.5,goalY-38,115,38);
-    ctx.beginPath();ctx.arc(cx,goalY-72,3.5,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(cx,goalY-72,52,Math.PI+0.6,-0.6);ctx.stroke();
-    ctx.lineWidth=3.5;ctx.strokeRect(cx-32,goalY,64,14);ctx.lineWidth=LINE_WIDTH;
-    ctx.beginPath();ctx.arc(m,goalY,11,-Math.PI/2,0);ctx.stroke();
-    ctx.beginPath();ctx.arc(FIELD_W-m,goalY,11,Math.PI,-Math.PI/2);ctx.stroke();
+    const g=fieldGeo(),k=g.k,cx=FIELD_W/2;
+    ctx.strokeRect(g.x0,g.y0,g.x1-g.x0,g.y1-g.y0);
+    ctx.beginPath();ctx.arc(cx,g.y0,PITCH.R*k,0,Math.PI);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,g.y0,3.5,0,Math.PI*2);ctx.fill();
+    drawGoalEnd(cx,g.y1,-Math.PI/2,k);
+    drawCorners(g,k,false);
   } else if(fieldType==="area"){
-    const m=30;ctx.strokeRect(m,m,FIELD_W-2*m,FIELD_H-2*m);
-    ctx.strokeRect(m,FIELD_H/2-80,55,160);
-    ctx.beginPath();ctx.arc(m+95,FIELD_H/2,4,0,Math.PI*2);ctx.fill();
-    ctx.lineWidth=3.5;ctx.strokeRect(m-18,FIELD_H/2-40,18,80);ctx.lineWidth=LINE_WIDTH;
+    const g=fieldGeo(),k=g.k,cx=FIELD_W/2;
+    ctx.beginPath();ctx.moveTo(g.x0,g.y1);ctx.lineTo(g.x1,g.y1);ctx.stroke();
+    drawGoalEnd(cx,g.y1,-Math.PI/2,k);
   }
   ctx.restore();
 }
@@ -17770,9 +17784,7 @@ $("btn-sessions-list").onclick=openSessionList;$("sessions-search").oninput=rend
 function newId(){return Date.now()+Math.random();}
 function setStatus(m){statusText.textContent=m;}
 function fieldRect(){
-  if(fieldType==="full")return{x0:28,y0:28,x1:FIELD_W-28,y1:FIELD_H-28};
-  if(fieldType==="half")return{x0:22,y0:22,x1:FIELD_W-22,y1:FIELD_H-22};
-  if(fieldType==="area")return{x0:30,y0:30,x1:FIELD_W-30,y1:FIELD_H-30};
+  const g=fieldGeo();if(g)return{x0:g.x0,y0:g.y0,x1:g.x1,y1:g.y1};
   return{x0:0,y0:0,x1:FIELD_W,y1:FIELD_H};
 }
 function render(){drawField();if(showGrid&&!exporting)drawGrid();drawObjects();if(!exporting){drawPreviews();drawOverlays();}
