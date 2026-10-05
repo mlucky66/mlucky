@@ -5901,7 +5901,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.2.4 · SSD</strong></p>
           <ul class="at-whatsnew-list">
             <li><strong>Allenamenti</strong> — editor di schemi ed esercizi, sedute in PDF, salvataggio su cloud con le presenze.</li>
-            <li><strong>Allenamenti · scorciatoie attrezzi</strong> — da tastiera: P giocatore, C cinesino, F freccia punto-punto, A asta, S sagoma, T testo.</li>
+            <li><strong>Allenamenti · scorciatoie attrezzi</strong> — da tastiera: barra spaziatrice seleziona/sposta, P giocatore, C cinesino, O pallone, F freccia punto-punto, + tracciato a più punti, A asta, S sagoma, T testo. Con il campo ruotato i tasti freccia muovono gli oggetti nella direzione vista sullo schermo; «Nuovi attrezzi e giocatori al 50%» ora vale anche per i giocatori.</li>
             <li><strong>Allenamenti · invio PDF su Google Drive</strong> — con il pulsante «☁ Drive» (opzionale, tramite Google Apps Script) accanto a «Esporta PDF» c'è «+ Drive» (anche nell'Elenco allenamenti): scarica il PDF di scheda esercizio o allenamento e lo carica in background su una cartella del tuo Drive; il pulsante normale scarica soltanto.</li>
             <li><strong>Calendario</strong> — sedute collegate ai giorni di allenamento: si aprono, si spostano e si scollegano dal dettaglio del giorno.</li>
             <li><strong>Formazione</strong> — scelta del capitano (fascia «C» sul campo, nel testo copiato e nell'export).</li>
@@ -16915,13 +16915,13 @@ select{background:var(--panel-2)}
   <details class="panel" open>
     <summary>Strumenti</summary>
     <div class="tool-group">
-      <button class="tool-btn active" data-tool="select"><span class="icon">↖</span> Seleziona / Sposta</button>
+      <button class="tool-btn active" data-tool="select" title="Scorciatoia: barra spaziatrice"><span class="icon">↖</span> Seleziona / Sposta</button>
       <button class="tool-btn" data-tool="player" title="Scorciatoia: tasto P"><span class="icon">●</span> Giocatore</button>
       <button class="tool-btn" data-tool="arrow"><span class="icon">→</span> Freccia</button>
       <button class="tool-btn" data-tool="arrow-ptp" title="Scorciatoia: tasto F"><span class="icon">⇢</span> Freccia punto-punto</button>
-      <button class="tool-btn" data-tool="path"><span class="icon">⌇</span> Tracciato a più punti</button>
+      <button class="tool-btn" data-tool="path" title="Scorciatoia: tasto +"><span class="icon">⌇</span> Tracciato a più punti</button>
       <button class="tool-btn" data-tool="row" title="Scegli l'oggetto con cui creare la fila"><span class="icon">⋯</span><span>Fila di oggetti</span><span class="caret">▸</span></button>
-      <button class="tool-btn" data-tool="equip" title="Scegli l'attrezzo da posizionare · scorciatoie: C cinesino, A asta, S sagoma"><span class="icon">🧰</span><span>Attrezzatura</span><span class="caret">▸</span></button>
+      <button class="tool-btn" data-tool="equip" title="Scegli l'attrezzo da posizionare · scorciatoie: C cinesino, O pallone, A asta, S sagoma"><span class="icon">🧰</span><span>Attrezzatura</span><span class="caret">▸</span></button>
       <button class="tool-btn" data-tool="zone"><span class="icon">▭</span> Zona</button>
       <button class="tool-btn" data-tool="text" title="Scorciatoia: tasto T"><span class="icon">T</span> Testo</button>
       <button class="tool-btn" data-tool="free"><span class="icon">✎</span> Disegno libero</button>
@@ -16992,7 +16992,7 @@ select{background:var(--panel-2)}
   <details class="panel" open>
     <summary>Dimensione attrezzi e giocatori</summary>
     <div class="mini-row"><button id="sc-half" title="Riduce al 50% attrezzi e giocatori selezionati">Riduci 50%</button><button id="sc-full" title="Riporta gli elementi selezionati a dimensione normale">Normale</button></div>
-    <div class="check-row"><input type="checkbox" id="small-equip"><label for="small-equip">Nuovi attrezzi al 50%</label></div>
+    <div class="check-row"><input type="checkbox" id="small-equip"><label for="small-equip" title="Vale per tutti i nuovi elementi: attrezzi e giocatori (anche quelli delle squadre inserite in blocco)">Nuovi attrezzi e giocatori al 50%</label></div>
   </details>
   <details class="panel">
     <summary>Rotazione</summary>
@@ -17223,7 +17223,7 @@ function rispondi(o) {
   <button data-eq="asta" title="Scorciatoia: tasto A"><span class="icon">|</span> Asta (palina)</button>
   <button data-eq="goal-small"><span class="icon">🥅</span> Porta piccola</button>
   <button data-eq="goal-big"><span class="icon">🥅</span> Porta grande</button>
-  <button data-eq="ball"><span class="icon">⚽</span> Pallone</button>
+  <button data-eq="ball" title="Scorciatoia: tasto O"><span class="icon">⚽</span> Pallone</button>
   <button data-eq="ladder"><span class="icon">▤</span> Speed-ladder</button>
   <button data-eq="mat"><span class="icon">▬</span> Materasso</button>
   <button data-eq="sagoma" title="Scorciatoia: tasto S"><span class="icon">🧍</span> Sagoma</button>
@@ -18799,7 +18799,7 @@ function makeObject(type,x,y){
     const tm=addTeamSel.value;if(tm){o.team=tm;o.color=tm==="A"?teamAColor.value:teamBColor.value;}
     if(noNumber.checked){o.number="";o.showNumber=false;}else if(autoNumber.checked){o.number=String(nextFreeNumber());o.showNumber=true;}else{o.number=cleanLabel(playerNumber.value);o.showNumber=true;}
   }
-  else if(SCALABLE.includes(type)&&smallEquip.checked)o.scale=.5;
+  if(SCALABLE.includes(type)&&smallEquip.checked)o.scale=.5;
   if(type==="sagoma")o.color="#fdd835";/* la Sagoma nasce sempre gialla, a prescindere dal colore scelto nel selettore */
   return o;
 }
@@ -19139,7 +19139,7 @@ function placeTeam(){
   list.forEach(pl=>{
     const along=pl.d*half,across=pl.lat*wid;let x,y;
     if(dir==="right"){x=x0+along;y=y0+across;}else if(dir==="left"){x=x1-along;y=y0+across;}else if(dir==="up"){y=y1-along;x=x0+across;}else{y=y0+along;x=x0+across;}
-    objects.push({id:newId(),type:"player",x,y,color:(pl.gk&&gkChk.checked)?gkColor.value:color,rotation:0,number:noNumber.checked?"":String(n),showNumber:!noNumber.checked,team,gk:!!pl.gk});n++;
+    objects.push({id:newId(),type:"player",x,y,color:(pl.gk&&gkChk.checked)?gkColor.value:color,rotation:0,number:noNumber.checked?"":String(n),showNumber:!noNumber.checked,team,gk:!!pl.gk,...(smallEquip.checked?{scale:.5}:{})});n++;
   });
   setSel([]);render();setStatus("Squadra "+team+" posizionata ("+formSel.value+")");
 }
@@ -19356,10 +19356,14 @@ document.addEventListener("keydown",e=>{
   if(pathPts){if(k==="Enter"){e.preventDefault();finishPath();}else if(k==="Escape")cancelPath();else if(k==="Backspace"){e.preventDefault();pathPts.pop();if(!pathPts.length)cancelPath();render();}return;}
   if(k==="Escape"){ptpFirst=null;rowDrag=null;hoverPos=null;setSel([]);render();return;}
   if((k==="Delete"||k==="Backspace")&&selected.size){e.preventDefault();deleteSelected();return;}
-  /* scorciatoie per scegliere lo strumento: P giocatore, C cinesino, F freccia punto-punto, A asta, S sagoma, T testo */
+  /* scorciatoie per scegliere lo strumento: Spazio seleziona, P giocatore, C cinesino, O pallone, F freccia punto-punto, + tracciato a più punti, A asta, S sagoma, T testo */
   if(!e.altKey&&!e.repeat&&!document.querySelector(".modal.show")){
-    const sc={p:"player",c:"cinesino",f:"arrow-ptp",a:"asta",s:"sagoma",t:"text"}[String(k).toLowerCase()];
-    if(sc){e.preventDefault();if(EQUIP.includes(sc))chooseEquip(sc);else setTool(sc);return;}
+    const sc={" ":"select",o:"ball","+":"path",p:"player",c:"cinesino",f:"arrow-ptp",a:"asta",s:"sagoma",t:"text"}[String(k).toLowerCase()];
+    if(sc){
+      e.preventDefault();
+      if(k===" "){if(tag==="BUTTON"||tag==="SUMMARY")t.blur();if(currentTool==="select")return;}
+      if(EQUIP.includes(sc))chooseEquip(sc);else setTool(sc);return;
+    }
   }
   if(k==="["||k==="q")rotateSelected(-15);else if(k==="]"||k==="e")rotateSelected(15);
   else if(k==="l"||k==="L")toggleLockSel();
@@ -19367,7 +19371,13 @@ document.addEventListener("keydown",e=>{
   else if(k==="PageUp"){e.preventDefault();reorder("fwd");}else if(k==="PageDown"){e.preventDefault();reorder("back");}
   else if(k==="Home"){e.preventDefault();reorder("front");}else if(k==="End"){e.preventDefault();reorder("bottom");}
   const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[k];
-  if(d&&selected.size){e.preventDefault();const st=e.shiftKey?10:2;nudge(d[0]*st,d[1]*st);}
+  if(d&&selected.size){
+    e.preventDefault();const st=e.shiftKey?10:2;let dx=d[0]*st,dy=d[1]*st;
+    /* gli oggetti sono memorizzati nelle coordinate "naturali" del campo: con il campo ruotato la direzione sullo schermo va convertita */
+    const R=curRot();
+    if(R===90)[dx,dy]=[dy,-dx];else if(R===180){dx=-dx;dy=-dy;}else if(R===270)[dx,dy]=[-dy,dx];
+    nudge(dx,dy);
+  }
 });
 var saveAsMode=false;
 function variantName(base){
