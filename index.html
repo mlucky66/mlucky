@@ -5901,7 +5901,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.2.4 · SSD</strong></p>
           <ul class="at-whatsnew-list">
             <li><strong>Allenamenti</strong> — editor di schemi ed esercizi, sedute in PDF, salvataggio su cloud con le presenze.</li>
-            <li><strong>Allenamenti · invio PDF su Google Drive</strong> — con il pulsante «☁ Drive» (opzionale, tramite Google Apps Script) accanto a «Esporta PDF» c'è «+ Drive»: scarica il PDF di scheda esercizio o allenamento e lo carica in background su una cartella del tuo Drive; il pulsante normale scarica soltanto.</li>
+            <li><strong>Allenamenti · invio PDF su Google Drive</strong> — con il pulsante «☁ Drive» (opzionale, tramite Google Apps Script) accanto a «Esporta PDF» c'è «+ Drive» (anche nell'Elenco allenamenti): scarica il PDF di scheda esercizio o allenamento e lo carica in background su una cartella del tuo Drive; il pulsante normale scarica soltanto.</li>
             <li><strong>Calendario</strong> — sedute collegate ai giorni di allenamento: si aprono, si spostano e si scollegano dal dettaglio del giorno.</li>
             <li><strong>Formazione</strong> — scelta del capitano (fascia «C» sul campo, nel testo copiato e nell'export).</li>
             <li><strong>Mese</strong> — all'apertura si torna all'ultimo mese selezionato.</li>
@@ -16721,7 +16721,14 @@ canvas{display:block;background:#2d5a27;cursor:crosshair}
 .dirty-flag{color:#ffb74d;font-weight:600}
 .saved-list li.sess-row{gap:10px}
 .saved-list li.sess-row .sess-meta{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
-.saved-list li.sess-row .sess-btns{display:flex;gap:6px;flex-shrink:0}
+.saved-list li.sess-row .sess-btns{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.sess-btns .sess-pdf{background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 9px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.sess-btns .sess-pdf.drive{border-color:#8a94a6;color:#35d07f}
+.sess-btns .sess-pdf:hover{filter:brightness(1.2)}
+@media (max-width:640px){.saved-list li.sess-row{flex-wrap:wrap}.saved-list li.sess-row>span{flex-basis:100%}.saved-list li.sess-row .sess-btns{flex-basis:100%;flex-wrap:wrap}}
+#modal-drive{z-index:110}
+#drv-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:120;max-width:90%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-left:4px solid #35d07f;border-radius:10px;padding:10px 16px;font-size:.84rem;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
+#drv-toast.err{border-left-color:#ff7043}
 .btn-block{width:100%;padding:10px;border-radius:8px;font-weight:600;margin-top:6px}
 
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a3344;border-radius:8px}
@@ -17080,6 +17087,7 @@ select{background:var(--panel-2)}
     <button id="cancel-backup" class="btn-block" style="background:var(--surface2)">Chiudi</button>
   </div>
 </div>
+<div id="drv-toast" role="status"></div>
 <div class="modal" id="modal-drive">
   <div class="modal-content wide">
     <h2>☁ Invio automatico dei PDF su Google Drive</h2>
@@ -18374,14 +18382,16 @@ function driveReady(){
   $("modal-drive").classList.add("show");
   return false;
 }
+let drvToastT=null;
+function driveToast(msg,err){const t=$("drv-toast");t.textContent=msg;t.className=err?"err":"";t.style.display="block";clearTimeout(drvToastT);drvToastT=setTimeout(()=>{t.style.display="none";},err?7000:4500);}
 function driveAuto(name,bytes,doneMsg){
   const c=driveCfg();
   if(!driveUrlOk(c.url)||!c.key){setStatus(doneMsg+" · Drive: impostazioni incomplete");return;}
   setStatus(doneMsg+" · invio a Drive…");
   driveSend(c,{action:"upload",name,data:bytesToB64(bytes)}).then(j=>{
-    if(j&&j.ok)setStatus(doneMsg+" · caricato su Drive");
-    else setStatus(doneMsg+" · Drive: "+(j&&j.error==="chiave"?"chiave non corretta":"invio non riuscito"));
-  }).catch(()=>setStatus(doneMsg+" · Drive: invio non riuscito (rete o script non raggiungibile)"));
+    if(j&&j.ok){setStatus(doneMsg+" · caricato su Drive");driveToast("☁️ Caricato su Drive: "+name);}
+    else{const m=j&&j.error==="chiave"?"chiave non corretta":"invio non riuscito";setStatus(doneMsg+" · Drive: "+m);driveToast("Drive: "+m+" · il PDF è stato comunque scaricato",true);}
+  }).catch(()=>{setStatus(doneMsg+" · Drive: invio non riuscito (rete o script non raggiungibile)");driveToast("Drive: invio non riuscito (rete o script non raggiungibile) · il PDF è stato comunque scaricato",true);});
 }
 function readDrv(){return{url:$("drv-url").value.trim(),key:$("drv-key").value.trim()};}
 function drvMsg(t){$("drv-msg").textContent=t;}
@@ -18541,13 +18551,14 @@ function addItemFromField(){
   if(session.items.length>=40){alert("Massimo 40 esercizi per allenamento.");return;}
   session.items.push(Object.assign({ref:null,pages:ps},itemFromSheet(sheet,currentName||"Esercizio")));renderSessionItems();
 }
-function exportSessionPdf(toDrive){
+function exportSessionPdf(toDrive,src){
   if(toDrive&&!driveReady())return;
-  const ok=session.items.filter(it=>resolveItemPages(it));
+  src=src||session;
+  const ok=src.items.filter(it=>resolveItemPages(it));
   if(!ok.length){alert("Aggiungi almeno un esercizio all'allenamento.");return;}
-  if(ok.length<session.items.length&&!confirm("Alcuni esercizi non sono più in libreria e verranno saltati. Continuare?"))return;
+  if(ok.length<src.items.length&&!confirm("Alcuni esercizi non sono più in libreria e verranno saltati. Continuare?"))return;
   if(!confirmVideoProblems(ok.map(it=>[it.title,rawVideo(it)])))return;
-  const s=JSON.parse(JSON.stringify(session));
+  const s=JSON.parse(JSON.stringify(src));
   makePdf(()=>buildSessionPdf(s),"allenamento-"+slug((s.numero?"n"+s.numero:"")+"-"+(s.data||""))+".pdf","PDF allenamento esportato",toDrive);
 }
 let currentSessionName=null,sessSnap=null;
@@ -18596,6 +18607,14 @@ function renderSessionList(){
     const op=document.createElement("button");op.textContent="✏️ Apri";op.title="Apri e modifica";op.onclick=ev=>{ev.stopPropagation();loadSessionByName(name);};
     const del=document.createElement("button");del.textContent="🗑";del.title="Elimina";del.className="danger";
     del.onclick=ev=>{ev.stopPropagation();if(!confirm('Eliminare «'+name+'»?'))return;const cur=getSessions();delete cur[name];if(setSessions(cur)){if(name===currentSessionName){currentSessionName=null;sessSnap=null;updateSessCurrent();}updateBackupInfo();setStatus("Allenamento eliminato: "+name);renderSessionList();}};
+    const mkPdf=toDrive=>{
+      const b=document.createElement("button");b.className="sess-pdf"+(toDrive?" drive":"");
+      b.textContent=toDrive?"☁️ Esporta PDF":"Esporta PDF";
+      b.title=toDrive?"Scarica il PDF e lo carica anche su Google Drive":"Scarica il PDF (senza caricarlo su Drive)";
+      b.onclick=ev=>{ev.stopPropagation();const c=cleanSession(getSessions()[name]);if(!c){alert("Impossibile leggere questo allenamento.");return;}exportSessionPdf(toDrive,c);};
+      return b;
+    };
+    bt.appendChild(mkPdf(false));bt.appendChild(mkPdf(true));
     bt.appendChild(op);bt.appendChild(del);li.appendChild(sp);li.appendChild(bt);list.appendChild(li);
   });
 }
