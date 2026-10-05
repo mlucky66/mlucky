@@ -5901,6 +5901,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.2.4 · SSD</strong></p>
           <ul class="at-whatsnew-list">
             <li><strong>Allenamenti</strong> — editor di schemi ed esercizi, sedute in PDF, salvataggio su cloud con le presenze.</li>
+            <li><strong>Allenamenti · invio PDF su Google Drive</strong> — con il pulsante «☁ Drive» (opzionale, tramite Google Apps Script) accanto a «Esporta PDF» c'è «+ Drive»: scarica il PDF di scheda esercizio o allenamento e lo carica in background su una cartella del tuo Drive; il pulsante normale scarica soltanto.</li>
             <li><strong>Calendario</strong> — sedute collegate ai giorni di allenamento: si aprono, si spostano e si scollegano dal dettaglio del giorno.</li>
             <li><strong>Formazione</strong> — scelta del capitano (fascia «C» sul campo, nel testo copiato e nell'export).</li>
             <li><strong>Mese</strong> — all'apertura si torna all'ultimo mese selezionato.</li>
@@ -16872,6 +16873,7 @@ select{background:var(--panel-2)}
       <button id="btn-saveas" title="Salva una copia con un altro nome: l'originale resta com'è e potrai modificare la copia (una variante dell'esercizio)">Salva con nome…</button>
       <button id="btn-load" title="Libreria esercizi: cerca, guarda l'anteprima e carica">📂 Libreria</button>
       <button id="btn-backup" title="Esporta o importa tutti gli esercizi">🗄 Backup</button>
+      <button id="btn-drive" title="Carica automaticamente su Google Drive i PDF che crei">☁ Drive</button>
       <button id="btn-export" class="primary" title="Esporta la pagina corrente come immagine">PNG</button>
     </div>
     <div class="group">
@@ -17078,6 +17080,62 @@ select{background:var(--panel-2)}
     <button id="cancel-backup" class="btn-block" style="background:var(--surface2)">Chiudi</button>
   </div>
 </div>
+<div class="modal" id="modal-drive">
+  <div class="modal-content wide">
+    <h2>☁ Invio automatico dei PDF su Google Drive</h2>
+    <p class="hint" style="margin-bottom:10px">Qui si imposta solo il collegamento. Per caricare un PDF su Drive usa il pulsante <strong>«+ Drive»</strong> accanto a «Esporta PDF», nella scheda esercizio e nell'allenamento: il pulsante normale scarica soltanto.</p>
+    <input type="text" id="drv-url" placeholder="Indirizzo dello script (finisce con /exec)" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input type="text" id="drv-key" placeholder="Chiave segreta (la stessa scritta nello script)" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p class="hint" id="drv-msg" style="min-height:1.4em;margin-bottom:8px"></p>
+    <button id="drv-save" class="primary btn-block">Salva impostazioni</button>
+    <button id="drv-test" class="btn-block" style="background:var(--surface2)">Prova la connessione</button>
+    <details id="drv-det" style="margin-top:12px">
+      <summary style="cursor:pointer;font-size:.85rem;font-weight:600">Come si configura (una volta sola)</summary>
+      <ol class="hint" style="margin:8px 0 0 18px;line-height:1.6">
+        <li>Vai su <strong>script.google.com</strong> con il tuo account Google e crea un <strong>Nuovo progetto</strong>.</li>
+        <li>Cancella il codice di esempio, incolla il codice qui sotto e cambia <strong>CAMBIA-QUESTA-CHIAVE</strong> con una chiave a tua scelta.</li>
+        <li><strong>Distribuisci → Nuova distribuzione → App web</strong>. «Esegui come»: <strong>Me</strong>. «Chi ha accesso»: <strong>Chiunque</strong>. Autorizza l'accesso a Drive quando richiesto.</li>
+        <li>Copia l'<strong>URL dell'app web</strong> (finisce con /exec) e incollalo qui sopra insieme alla stessa chiave.</li>
+        <li>Premi <strong>Prova la connessione</strong> e poi <strong>Salva</strong>.</li>
+      </ol>
+      <textarea id="drv-code" readonly rows="9" style="width:100%;margin-top:8px;font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px">// Attendance SSD - ricevi i PDF e salvali su Google Drive
+const CHIAVE = &#x27;CAMBIA-QUESTA-CHIAVE&#x27;;  // scrivi qui la stessa chiave che metti nel programma
+const CARTELLA_ID = &#x27;&#x27;;                  // facoltativo: ID di una tua cartella Drive (vuoto = cartella &quot;Attendance PDF&quot;)
+
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    if (d.key !== CHIAVE) return rispondi({ ok: false, error: &#x27;chiave&#x27; });
+    const cartella = trovaCartella();
+    if (d.action === &#x27;ping&#x27;) return rispondi({ ok: true, folder: cartella.getName() });
+    if (!d.name || !d.data) return rispondi({ ok: false, error: &#x27;dati&#x27; });
+    const nome = String(d.name).replace(/[\\\/:*?&quot;&lt;&gt;|]/g, &#x27;-&#x27;).slice(0, 120);
+    const vecchi = cartella.getFilesByName(nome);
+    while (vecchi.hasNext()) vecchi.next().setTrashed(true);
+    const blob = Utilities.newBlob(Utilities.base64Decode(d.data), &#x27;application/pdf&#x27;, nome);
+    const file = cartella.createFile(blob);
+    return rispondi({ ok: true, name: nome, url: file.getUrl() });
+  } catch (err) {
+    return rispondi({ ok: false, error: String(err) });
+  }
+}
+
+function trovaCartella() {
+  if (CARTELLA_ID) return DriveApp.getFolderById(CARTELLA_ID);
+  const it = DriveApp.getFoldersByName(&#x27;Attendance PDF&#x27;);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(&#x27;Attendance PDF&#x27;);
+}
+
+function rispondi(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+</textarea>
+      <button id="drv-copy" class="btn-block" style="background:var(--surface2)">Copia il codice</button>
+      <p class="hint" style="margin-top:8px">I PDF finiscono nella cartella «Attendance PDF» del tuo Drive (o in quella indicata nello script). Se rigeneri un PDF con lo stesso nome, il vecchio finisce nel cestino di Drive e resta il nuovo. Impostazioni e chiave restano solo su questo dispositivo: non vanno nel cloud né nei backup, quindi vanno inserite su ogni telefono o computer. Se l'invio non riesce, il PDF si scarica comunque normalmente.</p>
+    </details>
+    <button id="drv-close" class="btn-block" style="background:var(--surface2)">Chiudi</button>
+  </div>
+</div>
 <div class="modal" id="modal-sheet">
   <div class="modal-content wide">
     <h2>Scheda esercizio</h2>
@@ -17096,6 +17154,7 @@ select{background:var(--panel-2)}
     </div>
     <p class="hint" style="margin-top:10px">Il PDF contiene il disegno di tutte le pagine (fasi) dell'esercizio seguito da questi testi. La scheda si salva insieme all'esercizio (💾 Salva).</p>
     <button id="sh-pdf" class="primary btn-block">Esporta PDF scheda</button>
+    <button id="sh-pdf-drive" class="btn-block" style="background:var(--surface2)" title="Scarica il PDF e lo carica anche su Google Drive">☁ Esporta PDF scheda + Drive</button>
     <button id="sh-close" class="btn-block" style="background:var(--surface2)">Fatto</button>
   </div>
 </div>
@@ -17119,6 +17178,7 @@ select{background:var(--panel-2)}
     </div>
     <div class="form-grid" style="margin-top:10px"><label>Esercizi per pagina<select id="se-per"><option value="4">4 (uno sotto l'altro)</option><option value="6">6 (3 righe × 2 colonne)</option></select></label><div class="check-row" style="align-self:end;margin-top:0"><input type="checkbox" id="se-first"><label for="se-first">Solo la prima fase di ogni esercizio</label></div></div>
     <button id="se-pdf" class="primary btn-block">Esporta PDF allenamento</button>
+    <button id="se-pdf-drive" class="btn-block" style="background:var(--surface2)" title="Scarica il PDF e lo carica anche su Google Drive">☁ Esporta PDF allenamento + Drive</button>
     <div class="mini-row"><button id="se-save">Salva allenamento</button><button id="se-load">Elenco allenamenti</button><button id="se-new">Nuovo</button></div>
     <button id="se-close" class="btn-block" style="background:var(--surface2)">Chiudi</button>
   </div>
@@ -18296,9 +18356,57 @@ function downloadBytes(name,bytes,type){
   const b=new Blob([bytes],{type}),u=URL.createObjectURL(b),a=document.createElement("a");
   a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
 }
-function makePdf(builder,fileName,doneMsg){
+/* ---------- Google Drive: invio automatico dei PDF (Google Apps Script) ---------- */
+const DRIVE_KEY="calcio_drive_cfg";
+function driveCfg(){try{const o=JSON.parse(lsGet(DRIVE_KEY)||"{}")||{};return{url:String(o.url||"").trim(),key:String(o.key||"").trim()};}catch{return{url:"",key:""};}}
+function driveUrlOk(u){return /^https:\/\/script\.google\.com\/.+\/exec$/.test(u);}
+function bytesToB64(u){let t="";for(let i=0;i<u.length;i+=0x8000)t+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(t);}
+async function driveSend(c,body){
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),90000);
+  try{const r=await fetch(c.url,{method:"POST",body:JSON.stringify(Object.assign({key:c.key},body)),redirect:"follow",signal:ctl.signal});return await r.json();}
+  finally{clearTimeout(tm);}
+}
+function driveReady(){
+  const c=driveCfg();
+  if(driveUrlOk(c.url)&&c.key)return true;
+  $("drv-url").value=c.url;$("drv-key").value=c.key;
+  drvMsg("Prima di caricare un PDF su Drive inserisci l'indirizzo dello script (termina con /exec) e la chiave, poi premi Salva.");
+  $("modal-drive").classList.add("show");
+  return false;
+}
+function driveAuto(name,bytes,doneMsg){
+  const c=driveCfg();
+  if(!driveUrlOk(c.url)||!c.key){setStatus(doneMsg+" · Drive: impostazioni incomplete");return;}
+  setStatus(doneMsg+" · invio a Drive…");
+  driveSend(c,{action:"upload",name,data:bytesToB64(bytes)}).then(j=>{
+    if(j&&j.ok)setStatus(doneMsg+" · caricato su Drive");
+    else setStatus(doneMsg+" · Drive: "+(j&&j.error==="chiave"?"chiave non corretta":"invio non riuscito"));
+  }).catch(()=>setStatus(doneMsg+" · Drive: invio non riuscito (rete o script non raggiungibile)"));
+}
+function readDrv(){return{url:$("drv-url").value.trim(),key:$("drv-key").value.trim()};}
+function drvMsg(t){$("drv-msg").textContent=t;}
+$("btn-drive").onclick=()=>{const c=driveCfg();$("drv-url").value=c.url;$("drv-key").value=c.key;drvMsg("");$("modal-drive").classList.add("show");};
+$("drv-close").onclick=()=>$("modal-drive").classList.remove("show");
+$("drv-save").onclick=()=>{
+  const c=readDrv();
+  if(c.url||c.key){if(!driveUrlOk(c.url)||!c.key){drvMsg("Servono l'indirizzo dello script (termina con /exec) e la chiave.");return;}}
+  if(lsSet(DRIVE_KEY,JSON.stringify(c))){drvMsg(c.url?"Salvato: usa i pulsanti «+ Drive» per caricare i PDF.":"Impostazioni Drive cancellate.");}
+};
+$("drv-test").onclick=async()=>{
+  const c=readDrv();
+  if(!driveUrlOk(c.url)||!c.key){drvMsg("Inserisci l'indirizzo dello script (termina con /exec) e la chiave.");return;}
+  drvMsg("Provo la connessione…");
+  try{const j=await driveSend(c,{action:"ping"});
+    drvMsg(j&&j.ok?"✓ Connessione riuscita · cartella «"+(j.folder||"Drive")+"»":(j&&j.error==="chiave"?"✗ Chiave non corretta.":"✗ Risposta non valida dallo script."));
+  }catch(e){drvMsg("✗ Script non raggiungibile: controlla l'indirizzo e che la distribuzione abbia accesso «Chiunque».");}
+};
+$("drv-copy").onclick=()=>{
+  $("drv-det").open=true;const t=$("drv-code");t.focus();t.select();let ok=false;try{ok=document.execCommand("copy");}catch(e){}
+  drvMsg(ok?"Codice copiato negli appunti.":"Copia non riuscita: seleziona il testo del codice e copialo a mano.");
+};
+function makePdf(builder,fileName,doneMsg,toDrive){
   setStatus("Creo il PDF…");
-  preloadAllBg().then(()=>setTimeout(()=>{try{downloadBytes(fileName,builder(),"application/pdf");setStatus(doneMsg);}catch(err){console.error(err);alert("Errore nella creazione del PDF: "+err.message);setStatus("Errore PDF");}},30));
+  preloadAllBg().then(()=>setTimeout(()=>{try{const pdfBytes=builder();downloadBytes(fileName,pdfBytes,"application/pdf");setStatus(doneMsg);if(toDrive)driveAuto(fileName,pdfBytes,doneMsg);}catch(err){console.error(err);alert("Errore nella creazione del PDF: "+err.message);setStatus("Errore PDF");}},30));
 }
 
 /* ---------- scheda esercizio ---------- */
@@ -18354,11 +18462,12 @@ $("sh-video-check").onclick=fullVideoCheck;
 $("sh-video-open").onclick=()=>{const r=videoSyntax($("sh-video").value);if(!r.ok)return;const a=document.createElement("a");a.href=r.url;a.target="_blank";a.rel="noopener noreferrer";document.body.appendChild(a);a.click();a.remove();};
 function readSheet(){Object.keys(SH_FIELDS).forEach(k=>{sheet[k]=String($(SH_FIELDS[k]).value||"").slice(0,k==="title"?120:(k==="video"?400:3000));});}
 function openSheet(){Object.keys(SH_FIELDS).forEach(k=>{$(SH_FIELDS[k]).value=sheet[k]||"";});if(!sheet.title&&currentName)$("sh-title").value=currentName;$("modal-sheet").classList.add("show");if($("sh-video").value.trim())fullVideoCheck();else quickVideoCheck();}
-function exportSchedaPdf(){
+function exportSchedaPdf(toDrive){
+  if(toDrive&&!driveReady())return;
   readSheet();
   if(!confirmVideoProblems([[sheet.title||currentName,sheet.video]]))return;
   const ex={pages:snapshotPages(),sheet:{...sheet},name:currentName};
-  makePdf(()=>buildSchedaPdf(ex),"scheda-"+slug(sheet.title||currentName||"esercizio")+".pdf","PDF scheda esportato");
+  makePdf(()=>buildSchedaPdf(ex),"scheda-"+slug(sheet.title||currentName||"esercizio")+".pdf","PDF scheda esportato",toDrive);
 }
 
 /* ---------- allenamento ---------- */
@@ -18432,13 +18541,14 @@ function addItemFromField(){
   if(session.items.length>=40){alert("Massimo 40 esercizi per allenamento.");return;}
   session.items.push(Object.assign({ref:null,pages:ps},itemFromSheet(sheet,currentName||"Esercizio")));renderSessionItems();
 }
-function exportSessionPdf(){
+function exportSessionPdf(toDrive){
+  if(toDrive&&!driveReady())return;
   const ok=session.items.filter(it=>resolveItemPages(it));
   if(!ok.length){alert("Aggiungi almeno un esercizio all'allenamento.");return;}
   if(ok.length<session.items.length&&!confirm("Alcuni esercizi non sono più in libreria e verranno saltati. Continuare?"))return;
   if(!confirmVideoProblems(ok.map(it=>[it.title,rawVideo(it)])))return;
   const s=JSON.parse(JSON.stringify(session));
-  makePdf(()=>buildSessionPdf(s),"allenamento-"+slug((s.numero?"n"+s.numero:"")+"-"+(s.data||""))+".pdf","PDF allenamento esportato");
+  makePdf(()=>buildSessionPdf(s),"allenamento-"+slug((s.numero?"n"+s.numero:"")+"-"+(s.data||""))+".pdf","PDF allenamento esportato",toDrive);
 }
 let currentSessionName=null,sessSnap=null;
 function sessDirty(){if(!(session.items.length>0||String(session.descrizione||"").trim()))return false;return JSON.stringify(session)!==(sessSnap===null?JSON.stringify(newSession()):sessSnap);}
@@ -18497,7 +18607,7 @@ $("pg-left").onclick=()=>movePage(-1);$("pg-right").onclick=()=>movePage(1);
 $("page-caption").oninput=e=>{pages[curPage].caption=e.target.value.slice(0,100);scheduleThumbs();};
 $("btn-new").onclick=newExercise;
 $("btn-sheet").onclick=openSheet;$("sh-close").onclick=()=>{readSheet();$("modal-sheet").classList.remove("show");};
-$("sh-pdf").onclick=exportSchedaPdf;
+$("sh-pdf").onclick=()=>exportSchedaPdf(false);$("sh-pdf-drive").onclick=()=>exportSchedaPdf(true);
 $("btn-session").onclick=openSession;$("se-close").onclick=()=>{
   if(sessDirty()&&confirm("L'allenamento ha modifiche non salvate.\n\nOK = salva adesso\nAnnulla = chiudi senza salvare (la bozza resta finché non ricarichi la pagina)")){saveSession();if(sessDirty())return;}
   $("modal-session").classList.remove("show");
@@ -18515,7 +18625,7 @@ $("pick-confirm").onclick=()=>{if(!libPick||!libPick.sel.length){alert("Spunta a
 $("pick-cancel").onclick=()=>endLibPick(false);
 $("pick-all").onclick=()=>{if(!libPick)return;libPick.visible.forEach(n=>{if(!libPick.sel.includes(n)&&session.items.length+libPick.sel.length<40)libPick.sel.push(n);});paintPicks();updatePickBar();};
 $("pick-none").onclick=()=>{if(!libPick)return;libPick.sel.length=0;paintPicks();updatePickBar();};$("se-add-field").onclick=addItemFromField;
-$("se-pdf").onclick=exportSessionPdf;$("se-save").onclick=saveSession;$("se-load").onclick=openSessionList;
+$("se-pdf").onclick=()=>exportSessionPdf(false);$("se-pdf-drive").onclick=()=>exportSessionPdf(true);$("se-save").onclick=saveSession;$("se-load").onclick=openSessionList;
 $("se-new").onclick=()=>{if(sessDirty()&&!window.__atForceNew&&!confirm("L'allenamento ha modifiche non salvate. Iniziarne uno nuovo e perderle?"))return;session=newSession();currentSessionName=null;sessSnap=null;syncSessionForm();renderSessionItems();updateSessCurrent();};
 $("sessions-close").onclick=()=>$("modal-sessions").classList.remove("show");
 $("btn-sessions-list").onclick=openSessionList;$("sessions-search").oninput=renderSessionList;
@@ -19436,7 +19546,7 @@ setCanvasSize();updateLineUI();updateBackupInfo();render();setStatus("Pronto –
   if (window.__READONLY__) return;
 
   var KEY_SCHEMI = 'calcio_schemi_v5', KEY_SEDUTE = 'calcio_allenamenti_v1';
-  var OTHER_KEYS = ['calcio_ultimo_backup', 'calcio_attrezzi_stile', 'calcio_ultimo_campo'];
+  var OTHER_KEYS = ['calcio_ultimo_backup', 'calcio_attrezzi_stile', 'calcio_ultimo_campo', 'calcio_drive_cfg'];
   var CLOUD = {}; CLOUD[KEY_SCHEMI] = 'schemi'; CLOUD[KEY_SEDUTE] = 'sedute';
   var LS = 'squadra-all:';
   var MAX_DOC = 900000;
