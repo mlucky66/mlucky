@@ -5901,6 +5901,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.2.4 · SSD</strong></p>
           <ul class="at-whatsnew-list">
             <li><strong>Allenamenti</strong> — editor di schemi ed esercizi, sedute in PDF, salvataggio su cloud con le presenze.</li>
+            <li><strong>Allenamenti · scorciatoie attrezzi</strong> — da tastiera: P giocatore, C cinesino, F freccia punto-punto, A asta, S sagoma, T testo.</li>
             <li><strong>Allenamenti · invio PDF su Google Drive</strong> — con il pulsante «☁ Drive» (opzionale, tramite Google Apps Script) accanto a «Esporta PDF» c'è «+ Drive» (anche nell'Elenco allenamenti): scarica il PDF di scheda esercizio o allenamento e lo carica in background su una cartella del tuo Drive; il pulsante normale scarica soltanto.</li>
             <li><strong>Calendario</strong> — sedute collegate ai giorni di allenamento: si aprono, si spostano e si scollegano dal dettaglio del giorno.</li>
             <li><strong>Formazione</strong> — scelta del capitano (fascia «C» sul campo, nel testo copiato e nell'export).</li>
@@ -16915,14 +16916,14 @@ select{background:var(--panel-2)}
     <summary>Strumenti</summary>
     <div class="tool-group">
       <button class="tool-btn active" data-tool="select"><span class="icon">↖</span> Seleziona / Sposta</button>
-      <button class="tool-btn" data-tool="player"><span class="icon">●</span> Giocatore</button>
+      <button class="tool-btn" data-tool="player" title="Scorciatoia: tasto P"><span class="icon">●</span> Giocatore</button>
       <button class="tool-btn" data-tool="arrow"><span class="icon">→</span> Freccia</button>
-      <button class="tool-btn" data-tool="arrow-ptp"><span class="icon">⇢</span> Freccia punto-punto</button>
+      <button class="tool-btn" data-tool="arrow-ptp" title="Scorciatoia: tasto F"><span class="icon">⇢</span> Freccia punto-punto</button>
       <button class="tool-btn" data-tool="path"><span class="icon">⌇</span> Tracciato a più punti</button>
       <button class="tool-btn" data-tool="row" title="Scegli l'oggetto con cui creare la fila"><span class="icon">⋯</span><span>Fila di oggetti</span><span class="caret">▸</span></button>
-      <button class="tool-btn" data-tool="equip" title="Scegli l'attrezzo da posizionare"><span class="icon">🧰</span><span>Attrezzatura</span><span class="caret">▸</span></button>
+      <button class="tool-btn" data-tool="equip" title="Scegli l'attrezzo da posizionare · scorciatoie: C cinesino, A asta, S sagoma"><span class="icon">🧰</span><span>Attrezzatura</span><span class="caret">▸</span></button>
       <button class="tool-btn" data-tool="zone"><span class="icon">▭</span> Zona</button>
-      <button class="tool-btn" data-tool="text"><span class="icon">T</span> Testo</button>
+      <button class="tool-btn" data-tool="text" title="Scorciatoia: tasto T"><span class="icon">T</span> Testo</button>
       <button class="tool-btn" data-tool="free"><span class="icon">✎</span> Disegno libero</button>
     </div>
   </details>
@@ -17216,16 +17217,16 @@ function rispondi(o) {
 <div class="popmenu" id="eq-menu">
   <div class="pm-title">Attrezzatura</div>
   <button data-eq="cone"><span class="icon">▲</span> Cono</button>
-  <button data-eq="cinesino"><span class="icon">◉</span> Cinesino</button>
+  <button data-eq="cinesino" title="Scorciatoia: tasto C"><span class="icon">◉</span> Cinesino</button>
   <button data-eq="cerchio"><span class="icon">○</span> Cerchio</button>
   <button data-eq="ostacolo"><span class="icon">⊓</span> Ostacolo</button>
-  <button data-eq="asta"><span class="icon">|</span> Asta (palina)</button>
+  <button data-eq="asta" title="Scorciatoia: tasto A"><span class="icon">|</span> Asta (palina)</button>
   <button data-eq="goal-small"><span class="icon">🥅</span> Porta piccola</button>
   <button data-eq="goal-big"><span class="icon">🥅</span> Porta grande</button>
   <button data-eq="ball"><span class="icon">⚽</span> Pallone</button>
   <button data-eq="ladder"><span class="icon">▤</span> Speed-ladder</button>
   <button data-eq="mat"><span class="icon">▬</span> Materasso</button>
-  <button data-eq="sagoma"><span class="icon">🧍</span> Sagoma</button>
+  <button data-eq="sagoma" title="Scorciatoia: tasto S"><span class="icon">🧍</span> Sagoma</button>
 </div>
 <script>
 let FIELD_W=1000,FIELD_H=650;
@@ -19355,6 +19356,11 @@ document.addEventListener("keydown",e=>{
   if(pathPts){if(k==="Enter"){e.preventDefault();finishPath();}else if(k==="Escape")cancelPath();else if(k==="Backspace"){e.preventDefault();pathPts.pop();if(!pathPts.length)cancelPath();render();}return;}
   if(k==="Escape"){ptpFirst=null;rowDrag=null;hoverPos=null;setSel([]);render();return;}
   if((k==="Delete"||k==="Backspace")&&selected.size){e.preventDefault();deleteSelected();return;}
+  /* scorciatoie per scegliere lo strumento: P giocatore, C cinesino, F freccia punto-punto, A asta, S sagoma, T testo */
+  if(!e.altKey&&!e.repeat&&!document.querySelector(".modal.show")){
+    const sc={p:"player",c:"cinesino",f:"arrow-ptp",a:"asta",s:"sagoma",t:"text"}[String(k).toLowerCase()];
+    if(sc){e.preventDefault();if(EQUIP.includes(sc))chooseEquip(sc);else setTool(sc);return;}
+  }
   if(k==="["||k==="q")rotateSelected(-15);else if(k==="]"||k==="e")rotateSelected(15);
   else if(k==="l"||k==="L")toggleLockSel();
   else if(k==="g"||k==="G"){showGrid=!showGrid;$("grid-show").checked=showGrid;render();}
