@@ -19034,7 +19034,7 @@ function rispondi(o) {
       <button id="se-add-lib" title="Apri la libreria e spunta gli esercizi da inserire">Aggiungi dalla libreria</button>
       <button id="se-add-field">Aggiungi il campo attuale</button>
     </div>
-    <div class="form-grid" style="margin-top:10px"><label>Esercizi per pagina<select id="se-per"><option value="4">4 (uno sotto l'altro)</option><option value="6">6 (3 righe × 2 colonne)</option></select></label><div class="check-row" style="align-self:end;margin-top:0"><input type="checkbox" id="se-first"><label for="se-first">Solo la prima fase di ogni esercizio</label></div></div>
+    <div class="form-grid" style="margin-top:10px"><label>Esercizi per pagina<select id="se-per"><option value="4">4 (uno sotto l'altro)</option><option value="4g">4 (2 righe × 2 colonne)</option><option value="6">6 (3 righe × 2 colonne)</option></select></label><div class="check-row" style="align-self:end;margin-top:0"><input type="checkbox" id="se-first"><label for="se-first">Solo la prima fase di ogni esercizio</label></div></div>
     <button id="se-pdf" class="primary btn-block">Esporta PDF allenamento</button>
     <button id="se-pdf-drive" class="btn-block" style="background:var(--surface2)" title="Scarica il PDF e lo carica anche su Google Drive">☁ Esporta PDF allenamento + Drive</button>
     <div class="mini-row"><button id="se-save">Salva allenamento</button><button id="se-dup" title="Parti da una copia di questo allenamento (senza n., data e nota)">Duplica</button><button id="se-load">Elenco allenamenti</button><button id="se-new">Nuovo</button></div>
@@ -20269,7 +20269,7 @@ function drawPhases(doc,pgs,x,y,aw,ah,opt){
   });
 }
 function buildSessionPdf(s){
-  const M=14.17,CW=A4W-2*M,BOT=A4H-14.17,per=s.perPage===6?6:4,cols=per===6?2:1,rows=per/cols,gapX=14,cellW=(CW-(cols-1)*gapX)/cols;
+  const M=14.17,CW=A4W-2*M,BOT=A4H-14.17,lay=sessionPdfLayout(s),per=lay.per,cols=lay.cols,mode=lay.mode,rows=per/cols,gapX=14,cellW=(CW-(cols-1)*gapX)/cols;
   const dateStr=fmtDate(s.data),head="Allenamento"+(s.numero?" N° "+s.numero:"")+(dateStr?" · "+dateStr:"")+(s.campo?" · "+s.campo:"");
   const doc=PdfDoc(head);let y=M;
   doc.addPage();
@@ -20303,8 +20303,8 @@ function buildSessionPdf(s){
     const caps=n>1?use.map((p,i)=>p.caption?"Fase "+(i+1)+": "+p.caption:"").filter(Boolean).join("  ·  "):(use[0].caption||"");
     const item={title:o.it.title,meta:o.it.meta,text:o.it.text,caps,video:itemVideo(o.it)};
     const more=idx<items.length-1;
-    let badgeBoxW=per===4?(IMG_RIGHT-M):cellW;
-    if(per===4){
+    let badgeBoxW=cellW;
+    if(mode==="stack"){
       const innerH=slotH-10,LW=IMG_RIGHT-M,TW=A4W-M-TEXT_X;/* immagini: da M a 90 mm; testo: sempre da 95 mm */
       const plan=planText(item,idx+1,TW,innerH,BASE4,true)||planText(item,idx+1,TW,innerH,BASE4,"min")||planText(item,idx+1,TW,innerH,BASE4,"force");
       drawPhases(doc,use,x0,y0,LW,innerH,{rotate:true});
@@ -20312,9 +20312,11 @@ function buildSessionPdf(s){
       if(k<per-1&&more)doc.line(M,y0+slotH-5,M+CW,y0+slotH-5,RULE,.6);
       badgeBoxW=LW;
     }else{
-      const innerH=slotH-14;let fr=.56,imgH=innerH*fr,plan=null;
-      for(;fr>=.26;fr-=.06){imgH=innerH*fr;plan=planText(item,idx+1,cellW,innerH-imgH-6,BASE6,true);if(plan)break;}
-      if(!plan){imgH=innerH*.26;plan=planText(item,idx+1,cellW,innerH-imgH-6,BASE6,"min")||planText(item,idx+1,cellW,innerH-imgH-6,BASE6,"force");}
+      /* griglia: 4 (2×2) o 6 (3×2) — schema sopra, testo sotto nella cella */
+      const fonts=per===4?{t:10.5,m:8,b:9,c:7}:BASE6;
+      const innerH=slotH-14;let fr=per===4?.52:.56,imgH=innerH*fr,plan=null;
+      for(;fr>=.26;fr-=.06){imgH=innerH*fr;plan=planText(item,idx+1,cellW,innerH-imgH-6,fonts,true);if(plan)break;}
+      if(!plan){imgH=innerH*.26;plan=planText(item,idx+1,cellW,innerH-imgH-6,fonts,"min")||planText(item,idx+1,cellW,innerH-imgH-6,fonts,"force");}
       drawPhases(doc,use,x0,y0,cellW,imgH);
       drawPlan(doc,plan,x0,y0+imgH+6);
       if(row<rows-1&&more)doc.line(x0,y0+slotH-6,x0+cellW,y0+slotH-6,RULE,.6);
@@ -20350,7 +20352,7 @@ function buildSessionPdf(s){
       const col=k%cols, row=Math.floor(k/cols);
       const yy=pageTop(page), y0=yy+row*slotH;
       let cx,cy;
-      if(per===4){
+      if(mode==="stack"){
         /* schema a sinistra; freccia in basso sulla colonna schema */
         cx=M+LW4*0.55;
         cy=y0+(slotH-10)*0.82;
@@ -20363,7 +20365,7 @@ function buildSessionPdf(s){
     }
     /* 5.3.5: freccia piena a doppia punta, corta, al centro tra le due colonne e appena sopra la riga di separazione */
     const AL=62,AT=5,AHW=13,AHL=11;
-    function ruleY(page,row){return pageTop(page)+row*slotH+slotH-(per===4?5:6);}
+    function ruleY(page,row){return pageTop(page)+row*slotH+slotH-(mode==="stack"?5:6);}
     function blockArrow(cx,cy,ux,uy,col){
       const px=-uy,py=ux,h=AL/2,t=AT/2,w=AHW/2;
       const P=(a,b)=>[cx+ux*a+px*b,cy+uy*a+py*b];
@@ -20410,6 +20412,17 @@ function blankPage(){return{objects:[],fieldType:lastField(),caption:""};}
 const CAMPI=["Milleluci","Fiorano a 11","Gazzaniga a 11"];
 /* colore del badge «campo» nei PDF: uno per opzione, per riconoscerlo a colpo d'occhio */
 const CAMPO_COL={"Milleluci":[37,99,235],"Fiorano a 11":[22,163,74],"Gazzaniga a 11":[234,88,12]};
+function normalizePerPage(v){
+  if(v===6||v==="6")return 6;
+  if(v==="4g"||v===42||v==="42")return "4g";
+  return 4;
+}
+function sessionPdfLayout(s){
+  const v=normalizePerPage(s&&s.perPage);
+  if(v===6)return{per:6,cols:2,mode:"grid"};
+  if(v==="4g")return{per:4,cols:2,mode:"grid"};
+  return{per:4,cols:1,mode:"stack"};
+}
 function newSession(){return{numero:"",data:"",campo:"",perPage:4,descrizione:"",firstOnly:false,tags:[],esito:"",nota:"",items:[]};}
 function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").toLowerCase()||"documento";}
 function cleanSheet(s){
@@ -20446,7 +20459,7 @@ function normPages(d){
 function cleanSession(s){
   if(!s||typeof s!=="object")return null;
   const o=newSession();
-  o.numero=String(s.numero||"").slice(0,20);o.data=String(s.data||"").slice(0,20);o.campo=CAMPI.includes(s.campo)?s.campo:"";o.perPage=Number(s.perPage)===6?6:4;o.descrizione=String(s.descrizione||"").slice(0,1500);o.tags=normTags(s.tags);o.firstOnly=!!s.firstOnly;o.esito=(s.esito==="fatta"||s.esito==="saltata")?s.esito:"";o.nota=String(s.nota||"").slice(0,300);
+  o.numero=String(s.numero||"").slice(0,20);o.data=String(s.data||"").slice(0,20);o.campo=CAMPI.includes(s.campo)?s.campo:"";o.perPage=normalizePerPage(s.perPage);o.descrizione=String(s.descrizione||"").slice(0,1500);o.tags=normTags(s.tags);o.firstOnly=!!s.firstOnly;o.esito=(s.esito==="fatta"||s.esito==="saltata")?s.esito:"";o.nota=String(s.nota||"").slice(0,300);
   o.items=(Array.isArray(s.items)?s.items:[]).slice(0,40).map(it=>{
     if(!it||typeof it!=="object")return null;
     const r={ref:typeof it.ref==="string"?it.ref.slice(0,80):null,title:String(it.title||"").slice(0,120),meta:String(it.meta||"").slice(0,200),text:String(it.text||"").slice(0,3000),video:cleanUrl(it.video)};
@@ -21138,7 +21151,7 @@ $("btn-session").onclick=openSession;$("se-close").onclick=async ()=>{
 $("se-num").oninput=e=>{session.numero=e.target.value.slice(0,20);};
 $("se-date").oninput=e=>{session.data=e.target.value.slice(0,20);};
 $("se-campo").onchange=e=>{session.campo=CAMPI.includes(e.target.value)?e.target.value:"";};
-$("se-per").onchange=e=>{session.perPage=Number(e.target.value)===6?6:4;};
+$("se-per").onchange=e=>{session.perPage=normalizePerPage(e.target.value);};
 $("se-dup").onclick=duplicateOpenSession;
 $("se-desc").oninput=e=>{session.descrizione=e.target.value.slice(0,1500);};
 $("se-esito").onchange=e=>{session.esito=e.target.value==="fatta"||e.target.value==="saltata"?e.target.value:"";updateSessCurrent();};
