@@ -493,6 +493,35 @@
       }
     }
 
+    // ========== NOTIFICHE WHATSAPP (CallMeBot) ==========
+    // Uso personale: ogni destinatario ha attivato CallMeBot sul proprio numero
+    const WHATSAPP_DESTINATARI = [
+      { phone: '+393393855350', apikey: '5685872' },
+      { phone: '+393384989914', apikey: '4763331' }
+    ];
+
+    function inviaNotificaWhatsApp(messaggio) {
+      const testo = encodeURIComponent(messaggio);
+      WHATSAPP_DESTINATARI.forEach(({ phone, apikey }) => {
+        const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${testo}&apikey=${encodeURIComponent(apikey)}`;
+        // Image evita problemi CORS: la richiesta parte comunque
+        const img = new Image();
+        img.src = url;
+      });
+    }
+
+    function notificaNuovoSaldo(data, saldo, nota) {
+      const dataFmt = formattaDataEstesa(data);
+      const saldoFmt = saldo.toLocaleString('it-IT') + ' €';
+      let msg = `*Nuovo saldo registrato*\n`;
+      msg += `Data: ${dataFmt}\n`;
+      msg += `Saldo: ${saldoFmt}`;
+      if (nota && String(nota).trim()) {
+        msg += `\nNota: ${String(nota).trim()}`;
+      }
+      inviaNotificaWhatsApp(msg);
+    }
+
     // ========== SALVATAGGIO LOCALE (backup offline) ==========
     function salvaDatiLocali() {
       try {
@@ -753,9 +782,15 @@
       const saldo = Math.round(parseFloat(document.getElementById('saldo').value));
       const nota = document.getElementById('nota').value;
 
+      if (!dataValida(data) || !isFinite(saldo)) {
+        alert('Controlla data e saldo inseriti.');
+        return;
+      }
+
       rilevazioni.push({ id: Date.now(), data, saldo, nota });
       ordinaRilevazioni();
       salvaSuFirebase();
+      notificaNuovoSaldo(data, saldo, nota);
       this.reset();
       aggiornaInterfaccia();
     });
