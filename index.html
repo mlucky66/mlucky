@@ -5926,6 +5926,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.3.8 · SSD</strong></p>
           <ul class="at-whatsnew-list">
             <li><strong>5.3.8 · Allenamenti</strong> — «Fase» a badge colorati, più di una per esercizio (minuti per intero in ogni fase nel Carico della settimana, percentuali sui minuti totali); zoom sulla prima riga della barra; testo bianco di default, testo selezionato evidenziato e barra della dimensione sotto lo strumento Testo; colore cambiabile subito dopo aver posizionato un oggetto; «Togli n. selezione» per togliere il numero da una freccia; «Nuovi attrezzi e giocatori al 50%» preselezionato su campo intero, metà campo e area di rigore; nel campo «Giocatori» «>12» vale 13 e «>=12» vale 12; tag in un pannello richiudibile in Allenamento e Libreria.</li>
+            <li><strong>5.3.8 · Allenamenti (esportazione multipla)</strong> — nell'Elenco allenamenti puoi selezionare più allenamenti e premere «Esporta PDF» o «☁️ Esporta PDF + Drive» per ottenerli tutti insieme (anche in un unico ZIP).</li>
             <li><strong>5.3.8 · Presenze</strong> — nel Calendario il pulsante «Nuova seduta» resta sulla riga dei pulsanti anche quando c’è una nota; nel file «Sola visione» non compare più «Data di nascita non impostata».</li>
             <li><strong>5.3.7 · Allenamenti</strong> — modelli personali: «📐 Salva modello» salva l'esercizio sul campo come modello in un archivio separato dalla libreria (sincronizzato sul cloud e incluso nel backup completo); in «Da modello» c'è la sezione «I miei modelli» e su ogni modello di serie «Copia nei miei modelli»; filtro «Fase» e badge di fase in libreria; nel Carico della settimana la tabella «Minuti per fase» con la media delle 4 settimane precedenti; due caselle «Misure» nella barra per inserire a mano lunghezza × larghezza del campo (scala di righello, griglia e quote); il controllo della dimensione del testo compare anche quando è attivo lo strumento Testo. Presenze: la sezione Squadra non si sposta più di qualche pixel a destra (la barra di scorrimento è sempre riservata).</li>
             <li><strong>5.3.6 · Allenamenti</strong> — «Da modello» (accanto a Nuovo): 6 esercizi di partenza con campo, giocatori e attrezzi già disposti; strumento «Righello» per misurare in metri tra due punti (scala da «Dimensioni campo», la misura è anche nel PDF); «Carico della settimana» in Elenco allenamenti: minuti e allenamenti per tema, confronto con le 4 settimane precedenti e temi fermi da 3+ settimane; libreria con filtro «Uso» (mai usati, fermi da 4+ settimane, recenti), badge di freschezza sulle schede e suggerimenti sui temi fermi quando aggiungi esercizi a un allenamento; il menu «Fila di oggetti» ricorda anche quantità, colonne e righe; nuova «Fase» dell'esercizio (riscaldamento, situazionale, atletica, analitica, tattica, partitella) in alto nella Scheda esercizio.</li>
@@ -15462,104 +15463,8 @@ function buildRecentFormHtml(n){
     };
   }
 
-  const WHATSNEW_KEY = 'squadra-whatsnew-v538';
-  function showWhatsNewIfNeeded(){
-    if (isReadonly) return;
-    try { if (localStorage.getItem(WHATSNEW_KEY) === '1') return; } catch(e) { return; }
-    const overlay = document.createElement('div');
-    overlay.className = 'at-modal-overlay';
-    overlay.innerHTML = `
-      <div class="at-modal" role="dialog" aria-modal="true" style="max-width:460px">
-        <h3>Novità 5.3.8</h3>
-        <ul style="margin:0 0 14px;padding-left:18px;font-size:13px;line-height:1.5;color:var(--chalk)">
-          <li><strong>Fase a badge</strong> — nella scheda esercizio puoi scegliere più fasi insieme; nel Carico della settimana i minuti contano per intero in ciascuna fase.</li>
-          <li><strong>Allenamenti</strong> — zoom sulla prima riga della barra, testo bianco di default e selezione visibile, barra della dimensione testo sotto lo strumento, colore cambiabile subito dopo aver posizionato un oggetto, «Togli n. selezione» per le frecce, 50% preselezionato sui campi pieni, «>» letto come «maggiore di» nei giocatori, tag in un pannello richiudibile.</li>
-          <li><strong>Calendario</strong> — «Nuova seduta» resta sulla riga dei pulsanti anche con una nota; in «Sola visione» sparisce «Data di nascita non impostata».</li>
-          <li><strong>I miei modelli</strong> — «📐 Salva modello» crea un modello personale (archivio separato dalla libreria, sincronizzato e nel backup); in «Da modello» trovi anche «Copia nei miei modelli» per adattare quelli di serie.</li>
-          <li><strong>Fase</strong> — filtro «Fase» e badge in libreria; nel Carico della settimana una tabella con i minuti per fase e la media delle 4 settimane precedenti.</li>
-          <li><strong>Misure del campo</strong> — due caselle nella barra (lunghezza × larghezza in metri) per adattare il campo e la scala del righello a quelli reali; il controllo del testo si vede anche con lo strumento Testo attivo.</li>
-          <li>La sezione Squadra non si sposta più di qualche pixel rispetto alle altre.</li>
-          <li><strong>Nuovo logo 5.3</strong> e nuova icona dell’app.</li>
-          <li>Allenamenti: strumento <strong>Linea</strong> (come la freccia punto-punto, senza punta) e scorciatoie <strong>B</strong> cono, <strong>N</strong> porta grande, <strong>Z</strong> zona.</li>
-          <li><strong>Mappa dei temi</strong> — quanti allenamenti per etichetta, mese per mese; le etichette sono anche nel PDF.</li>
-          <li><strong>Libreria più furba</strong> — filtri durata/giocatori/campo e ordine «non usati da più tempo».</li>
-          <li><strong>Backup automatico</strong> — una copia al giorno conservata da sola; si ripristina da Esporta → «Copie automatiche».</li>
-          <li><strong>Com’è andata</strong> — sulle sedute del calendario: fatta/saltata e due righe di nota.</li>
-          <li><strong>Duplica allenamento</strong> e riordino degli esercizi trascinandoli.</li>
-          <li>Allenamenti: disegna gli esercizi, prepara le sedute e collegale al calendario.</li>
-          <li>Capitano nella formazione; il mese scelto resta selezionato alla riapertura.</li>
-          <li>Elenco allenamenti, etichette per tema, avviso sulle modifiche non salvate e backup completo in un solo file.</li>
-          <li>Giocatori ritirati: si nascondono senza perdere le statistiche passate.</li>
-          <li>Nascondi ed Elimina giocatore ora si trovano nella scheda del giocatore (clic sul numero di maglia).</li>
-          <li>5.2.4: nuova scheda giocatore (con esportazione per le famiglie) e libreria esercizi a caselle di spunta.</li>
-          <li>Allenamenti: frecce numerate, lettere nel simbolo Giocatore e ultimo campo ricordato.</li>
-          <li>Formazione, convocazioni smart, giugno ed export consultazione senza date di nascita (dal ramo 4.5).</li>
-          <li>Dettagli in Squadra → Impostazioni → Novità versione.</li>
-        </ul>
-        <div class="at-modal-actions"><button class="at-btn primary" id="atWhatsNewOk">Ok</button></div>
-      </div>`;
-    document.body.appendChild(overlay);
-    const close = () => {
-      try { localStorage.setItem(WHATSNEW_KEY, '1'); } catch(e) { /* */ }
-      overlay.remove();
-    };
-    overlay.querySelector('#atWhatsNewOk').onclick = close;
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
-  }
-
-  function showOnboardingIfNeeded(){
-    if (isReadonly) return;
-    try {
-      if (localStorage.getItem(ONBOARD_KEY) === '1') { showWhatsNewIfNeeded(); return; }
-    } catch(e) { return; }
-    const overlay = document.createElement('div');
-    overlay.className = 'at-modal-overlay';
-    const logoEl = document.querySelector('.at-logo');
-    const logoSrc = logoEl ? logoEl.getAttribute('src') : '';
-    const logoBlock = logoSrc
-      ? '<div class="at-onboard-logo"><img src="'+logoSrc+'" alt="Attendance SSD" /></div>'
-      : '';
-    overlay.innerHTML = `
-      <div class="at-modal" role="dialog" aria-modal="true" aria-labelledby="atOnboardTitle" style="max-width:460px">
-        ${logoBlock}
-        <h3 id="atOnboardTitle">Attendance SSD 5.3.8</h3>
-        <p style="margin:0 0 8px;font-size:13px;color:var(--chalk-dim);line-height:1.4">
-          Tre aree, un solo file. Ecco come orientarti.
-        </p>
-        <div class="at-onboard-steps">
-          <div class="at-onboard-step">
-            <span class="at-onboard-num">1</span>
-            <div><strong>Presenze</strong><p>Lavoro quotidiano: griglia, schede o calendario. Cerca, filtra e segna dalla toolbar.</p></div>
-          </div>
-          <div class="at-onboard-step">
-            <span class="at-onboard-num">2</span>
-            <div><strong>Squadra</strong><p>Rosa, categorie (es. Giovanissimi / Allievi), stagioni, programmazione e impostazioni.</p></div>
-          </div>
-          <div class="at-onboard-step">
-            <span class="at-onboard-num">3</span>
-            <div><strong>Analisi</strong><p>Insight automatici, statistiche giocatori e partite, report da esportare o copiare.</p></div>
-          </div>
-          <div class="at-onboard-step">
-            <span class="at-onboard-num">4</span>
-            <div><strong>Primo avvio</strong><p>In Squadra → Rosa aggiungi i giocatori; in Programmazione imposta i giorni; in Presenze genera gli allenamenti del mese.</p></div>
-          </div>
-        </div>
-        <p style="margin:0 0 14px;font-size:12px;color:var(--chalk-dim);line-height:1.4">
-          Imposta il tuo nome (✎ in alto) se lavori in più persone con il cloud. Il salvataggio è automatico.
-        </p>
-        <div class="at-modal-actions">
-          <button class="at-btn primary" id="atOnboardOk">Inizia</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    const close = () => {
-      try { localStorage.setItem(ONBOARD_KEY, '1'); localStorage.setItem(WHATSNEW_KEY, '1'); } catch(e) { /* */ }
-      overlay.remove();
-    };
-    overlay.querySelector('#atOnboardOk').onclick = close;
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
-  }
+  /* 5.3.8: messaggio di benvenuto / novità all'avvio rimosso (le novità restano in Squadra → «Novità versione») */
+  function showOnboardingIfNeeded(){}
 
   function runStatsSelfTest(){
     const fake = {
@@ -17218,6 +17123,14 @@ canvas{display:block;background:#2d5a27;cursor:crosshair}
 .sess-btns .sess-pdf{background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 9px;font-size:.78rem;font-weight:700;white-space:nowrap}
 .sess-btns .sess-pdf.drive{border-color:#8a94a6;color:#35d07f}
 .sess-btns .sess-pdf:hover{filter:brightness(1.2)}
+.sess-btns .sess-sel{width:20px;height:20px;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
+#sess-bulk{display:none;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:.8rem}
+#sess-bulk label{display:flex;align-items:center;gap:6px;cursor:pointer}
+#sess-bulk input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+#sess-bulk .sess-bulk-n{color:var(--muted);flex:1;min-width:90px}
+#sess-bulk button{background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 10px;font-size:.78rem;font-weight:700;white-space:nowrap}
+#sess-bulk button.drive{border-color:#8a94a6;color:#35d07f}
+#sess-bulk button:disabled{opacity:.4;cursor:default}
 @media (max-width:640px){.saved-list li.sess-row{flex-wrap:wrap}.saved-list li.sess-row>span{flex-basis:100%}.saved-list li.sess-row .sess-btns{flex-basis:100%;flex-wrap:wrap}}
 #modal-drive{z-index:110}
 #drv-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:120;max-width:90%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-left:4px solid #35d07f;border-radius:10px;padding:10px 16px;font-size:.84rem;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
@@ -17735,6 +17648,13 @@ function rispondi(o) {
     <input type="search" id="sessions-search" placeholder="Cerca per nome…" autocomplete="off" spellcheck="false" style="width:100%;padding:10px 12px;margin-bottom:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem">
     <div class="tag-row" id="sessions-tag-filter"></div>
     <div class="hint" id="sessions-count" style="margin-bottom:6px"></div>
+    <div id="sess-bulk">
+      <label title="Seleziona o deseleziona tutti gli allenamenti visibili nell'elenco"><input type="checkbox" id="sess-selall"> Tutti</label>
+      <span class="sess-bulk-n" id="sess-selcount"></span>
+      <label title="Scarica un unico file ZIP invece di tanti PDF separati"><input type="checkbox" id="sess-bulk-zip"> ZIP unico</label>
+      <button id="sess-bulk-pdf" title="Scarica i PDF degli allenamenti selezionati (senza caricarli su Drive)">Esporta PDF</button>
+      <button id="sess-bulk-drive" class="drive" title="Scarica i PDF selezionati e li carica anche su Google Drive">☁️ Esporta PDF + Drive</button>
+    </div>
     <ul class="saved-list" id="sessions-list"></ul>
     <button id="sessions-week" class="btn-block" title="Minuti e temi della settimana, confronto con le precedenti">Carico della settimana</button>
     <button id="sessions-themes" class="btn-block" title="Quanti allenamenti per tema, mese per mese">Mappa dei temi</button>
@@ -19467,6 +19387,103 @@ async function loadSessionByName(name){
   $("modal-sessions").classList.remove("show");$("modal-session").classList.add("show");
   setStatus("Allenamento aperto: "+name);
 }
+
+/* ---------- Esportazione PDF multipla degli allenamenti (anche su Drive) ---------- */
+const sessSel=new Set();let sessVisible=[],_bulkBusy=false;
+function updateSessBulk(){
+  const bar=$("sess-bulk");if(!bar)return;
+  const tot=Object.keys(getSessions()).length;
+  bar.style.display=tot?"flex":"none";
+  const n=sessSel.size,vis=sessVisible.length,selVis=sessVisible.filter(x=>sessSel.has(x)).length;
+  const all=$("sess-selall");all.checked=vis>0&&selVis===vis;all.indeterminate=selVis>0&&selVis<vis;
+  $("sess-selcount").textContent=n?(n+(n===1?" selezionato":" selezionati")):"Nessuno selezionato";
+  ["sess-bulk-pdf","sess-bulk-drive"].forEach(id=>{$(id).disabled=!n||_bulkBusy;});
+}
+const _crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=_crcT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+function makeZip(files){
+  const enc=new TextEncoder(),d=new Date();
+  const dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF,dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  const parts=[],cen=[];let off=0;
+  files.forEach(f=>{
+    const nm=enc.encode(f.name),crc=crc32(f.bytes),sz=f.bytes.length;
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,sz,true);lh.setUint32(22,sz,true);lh.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(lh.buffer),nm,f.bytes);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(12,dt,true);ch.setUint16(14,dd,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,sz,true);ch.setUint32(24,sz,true);ch.setUint16(28,nm.length,true);ch.setUint32(42,off,true);
+    cen.push(new Uint8Array(ch.buffer),nm);
+    off+=30+nm.length+sz;
+  });
+  const cs=cen.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:"application/zip"});
+}
+async function exportSessionsBulk(toDrive){
+  if(_bulkBusy)return;
+  const all=getSessions(),names=[...sessSel].filter(n=>Object.prototype.hasOwnProperty.call(all,n));
+  if(!names.length){uiAlert("Seleziona almeno un allenamento.");return;}
+  if(toDrive&&!driveReady())return;
+  const jobs=[],skipped=[];let missing=false;
+  names.forEach(n=>{
+    const c=cleanSession(all[n]);
+    if(!c){skipped.push(n);return;}
+    const ok=c.items.filter(it=>resolveItemPages(it));
+    if(!ok.length){skipped.push(n);return;}
+    if(ok.length<c.items.length)missing=true;
+    jobs.push({name:n,s:c,ok});
+  });
+  if(!jobs.length){uiAlert("Gli allenamenti selezionati non hanno esercizi esportabili.");return;}
+  if(missing&&!await uiConfirm("In alcuni allenamenti ci sono esercizi non più in libreria: verranno saltati. Continuare?"))return;
+  const vids=[];jobs.forEach(j=>j.ok.forEach(it=>vids.push([j.name+" › "+(it.title||"Esercizio"),rawVideo(it)])));
+  if(!await confirmVideoProblems(vids))return;
+  const zip=!!$("sess-bulk-zip").checked&&jobs.length>1;
+  _bulkBusy=true;updateSessBulk();
+  const used=new Set(),files=[],failed=[];
+  try{
+    setStatus("Preparo i PDF…");
+    await preloadAllBg();
+    for(let i=0;i<jobs.length;i++){
+      const j=jobs[i];setStatus("Creo PDF "+(i+1)+" di "+jobs.length+"…");
+      await new Promise(r=>setTimeout(r,30));
+      try{
+        const s=JSON.parse(JSON.stringify(j.s));
+        let base="allenamento-"+((s.numero||s.data)?slug((s.numero?"n"+s.numero:"")+"-"+(s.data||"")):slug(j.name));
+        let fn=base+".pdf",k=2;while(used.has(fn))fn=base+"-"+(k++)+".pdf";used.add(fn);
+        files.push({name:fn,bytes:buildSessionPdf(s),label:j.name});
+      }catch(err){console.error(err);failed.push(j.name);}
+    }
+    if(!files.length){uiAlert("Nessun PDF creato.");setStatus("Errore PDF");return;}
+    if(zip){
+      const d=new Date(),ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      downloadBytes("allenamenti-"+ds+".zip",makeZip(files),"application/zip");
+    }else{
+      for(let i=0;i<files.length;i++){downloadBytes(files[i].name,files[i].bytes,"application/pdf");if(i<files.length-1)await new Promise(r=>setTimeout(r,450));}
+    }
+    let msg=files.length+(files.length===1?" PDF esportato":" PDF esportati");
+    setStatus(msg);
+    if(toDrive){
+      const c=driveCfg();let okN=0,errN=0,keyErr=false;
+      for(let i=0;i<files.length;i++){
+        setStatus(msg+" · invio a Drive "+(i+1)+" di "+files.length+"…");
+        try{const r=await driveSend(c,{action:"upload",name:files[i].name,data:bytesToB64(files[i].bytes)});
+          if(r&&r.ok)okN++;else{errN++;if(r&&r.error==="chiave")keyErr=true;}}
+        catch(e){errN++;}
+      }
+      if(!errN){setStatus(msg+" · caricati su Drive");driveToast("☁️ Caricati su Drive: "+okN+(okN===1?" PDF":" PDF"));}
+      else{setStatus(msg+" · Drive: "+okN+" ok, "+errN+" non riusciti");driveToast("Drive: "+(keyErr?"chiave non corretta":okN+" caricati, "+errN+" non riusciti")+" · i PDF sono stati comunque scaricati",true);}
+    }
+    const extra=[];
+    if(failed.length)extra.push("Non è stato possibile creare: "+failed.join(", ")+".");
+    if(skipped.length)extra.push("Saltati perché senza esercizi esportabili: "+skipped.join(", ")+".");
+    if(extra.length)uiAlert(extra.join("\n"));
+  }finally{_bulkBusy=false;updateSessBulk();}
+}
+$("sess-selall").onchange=()=>{const on=$("sess-selall").checked;sessVisible.forEach(n=>{if(on)sessSel.add(n);else sessSel.delete(n);});renderSessionList();};
+$("sess-bulk-pdf").onclick=()=>exportSessionsBulk(false);
+$("sess-bulk-drive").onclick=()=>exportSessionsBulk(true);
 function renderSessionList(){
   const all=getSessions(),list=$("sessions-list"),q=normTxt(($("sessions-search").value||"").trim());
   const key=n=>(all[n]&&all[n].data)||"";
@@ -19474,9 +19491,11 @@ function renderSessionList(){
   const utags=usedTags(all);if(sessTag&&!utags.includes(sessTag))sessTag="";
   renderTagFilter($("sessions-tag-filter"),utags,sessTag,t=>{sessTag=t;renderSessionList();});
   const names=allNames.filter(n=>(!q||normTxt(n+" "+normTags(all[n]&&all[n].tags).join(" ")).includes(q))&&(!sessTag||normTags(all[n]&&all[n].tags).includes(sessTag))).sort((a,b)=>key(b).localeCompare(key(a))||a.localeCompare(b,"it"));
+  sessSel.forEach(n=>{if(!Object.prototype.hasOwnProperty.call(all,n))sessSel.delete(n);});
+  sessVisible=names.slice();
   list.innerHTML="";
   $("sessions-count").textContent=allNames.length?((q||sessTag)?names.length+" di "+allNames.length+" allenamenti":allNames.length+(allNames.length===1?" allenamento preparato":" allenamenti preparati")):"";
-  if(!names.length){const li=document.createElement("li");li.style.color="var(--muted)";li.textContent=allNames.length?"Nessun allenamento corrisponde alla ricerca":"Nessun allenamento salvato";list.appendChild(li);return;}
+  if(!names.length){const li=document.createElement("li");li.style.color="var(--muted)";li.textContent=allNames.length?"Nessun allenamento corrisponde alla ricerca":"Nessun allenamento salvato";list.appendChild(li);updateSessBulk();return;}
   names.forEach(name=>{
     const s=all[name]||{},n=(s.items||[]).length;
     const li=document.createElement("li");li.className="sess-row";li.dataset.name=name;
@@ -19486,6 +19505,10 @@ function renderSessionList(){
     meta.textContent=[s.data?fmtDate(s.data):"senza data",s.campo||"",n+(n===1?" esercizio":" esercizi")].filter(Boolean).join(" · ");
     sp.appendChild(t);sp.appendChild(meta);if(normTags(s.tags).length){const tg=document.createElement("span");tg.style.cursor="inherit";tg.style.display="block";tagMinis(s.tags,tg);sp.appendChild(tg);}sp.onclick=()=>loadSessionByName(name);
     const bt=document.createElement("div");bt.className="sess-btns";
+    const cb=document.createElement("input");cb.type="checkbox";cb.className="sess-sel";cb.title="Seleziona per l'esportazione PDF multipla";cb.checked=sessSel.has(name);
+    cb.onclick=ev=>ev.stopPropagation();
+    cb.onchange=()=>{if(cb.checked)sessSel.add(name);else sessSel.delete(name);updateSessBulk();};
+    bt.appendChild(cb);
     const op=document.createElement("button");op.textContent="✏️ Apri";op.title="Apri e modifica";op.onclick=ev=>{ev.stopPropagation();loadSessionByName(name);};
     const dup=document.createElement("button");dup.textContent="⧉ Duplica";dup.title="Crea una copia (senza n., data e nota)";dup.onclick=ev=>{ev.stopPropagation();duplicateSessionByName(name);};
     const del=document.createElement("button");del.textContent="🗑";del.title="Elimina";del.className="danger";
@@ -19500,6 +19523,7 @@ function renderSessionList(){
     bt.appendChild(mkPdf(false));bt.appendChild(mkPdf(true));
     bt.appendChild(op);bt.appendChild(dup);bt.appendChild(del);li.appendChild(sp);li.appendChild(bt);list.appendChild(li);
   });
+  updateSessBulk();
 }
 function blankedCopy(s){const c=JSON.parse(JSON.stringify(s));c.numero="";c.data="";c.esito="";c.nota="";return c;}
 function duplicateOpenSession(){
