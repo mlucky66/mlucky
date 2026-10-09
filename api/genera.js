@@ -10,8 +10,8 @@
 
 const STATI_TEMPORANEI = [429, 500, 502, 503, 504];
 const TENTATIVI_PER_MODELLO = 2;
-const PAUSA_MS = 1500;
-const TIMEOUT_MS = 45000;
+const PAUSA_MS = 800;
+const TIMEOUT_MS = 20000; /* per chiamata: fallisci prima e passa al fallback */
 
 const PHASES = ['riscaldamento', 'analitica', 'atletica', 'situazionale', 'tattica', 'partitella'];
 
