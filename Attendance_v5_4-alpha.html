@@ -18711,7 +18711,6 @@ select{background:var(--panel-2)}
     <span class="fq" id="fld-quick" title="Misure reali del campo in metri (lunghezza × larghezza): sul campo vuoto ridimensiona in scala; sugli altri fissano la scala di righello, griglia e quote">Misure <input id="fq-l" type="text" inputmode="decimal" placeholder="L" aria-label="Lunghezza del campo in metri"> × <input id="fq-w" type="text" inputmode="decimal" placeholder="l" aria-label="Larghezza del campo in metri"> m</span>
     <span id="bg-ctl" style="display:none;align-items:center;gap:6px"><button id="bg-change" title="Scegli un'altra immagine">Cambia…</button><button id="bg-remove" title="Rimuovi l'immagine di sfondo">Rimuovi</button></span>
     <button id="fld-rot90" title="Ruota il campo di 90° in senso orario (oggetti compresi)">↻ Campo 90°</button><button id="fld-rot180" title="Ruota il campo di 180° (oggetti compresi)">↻ 180°</button><button id="fit-obj-field" title="Scala e sposta gli oggetti per farli stare nel campo (le Dimensioni campo in scheda non cambiano)">⊡ Nel campo</button><button id="fit-fill-field" title="Ingrandisce gli oggetti per riempire meglio il campo (le Dimensioni campo in scheda non cambiano)">⊞ Riempi</button><button id="crop-btn" title="Scegli quale parte della pagina finisce nel PDF: trascina un riquadro sul campo">✂ Area PDF</button><button id="crop-reset" style="display:none" title="Torna a inserire tutta la pagina nel PDF">Tutto il campo</button>
-    <button id="eq-style" title="Cambia lo stile grafico degli attrezzi: realistico o classico">Attrezzi: realistici</button>
     <input type="file" id="bg-file" accept="image/png,image/jpeg" hidden>
   </div>
 </header>
@@ -18721,6 +18720,7 @@ select{background:var(--panel-2)}
     <summary>Strumenti</summary>
     <div class="tool-group">
       <button class="tool-btn active" data-tool="select" title="Scorciatoia: barra spaziatrice"><span class="icon">↖</span> Seleziona / Sposta</button>
+      <button class="tool-btn" data-tool="hand" title="Trascina il campo (pan). Scorciatoia: tieni premuto M"><span class="icon">✋</span> Mano / Pan</button>
       <button class="tool-btn" data-tool="player" title="Scorciatoia: tasto P"><span class="icon">●</span> Giocatore</button>
       <button class="tool-btn" data-tool="arrow"><span class="icon">→</span> Freccia</button>
       <button class="tool-btn" data-tool="arrow-ptp" title="Scorciatoia: tasto F"><span class="icon">⇢</span> Freccia punto-punto</button>
@@ -19125,6 +19125,8 @@ function rispondi(o) {
   <button data-eq="ladder"><span class="icon">▤</span> Speed-ladder</button>
   <button data-eq="mat"><span class="icon">▬</span> Materasso</button>
   <button data-eq="sagoma" title="Scorciatoia: tasto S"><span class="icon">🧍</span> Sagoma</button>
+  <div class="pm-sep" style="height:1px;background:var(--border);margin:6px 4px"></div>
+  <button type="button" id="eq-style" title="Alterna stile grafico attrezzi: realistico / classico"><span class="icon">🎨</span> <span id="eq-style-lab">Stile: realistici</span></button>
 </div>
 <script>
 let FIELD_W=1000,FIELD_H=650;
@@ -21383,14 +21385,14 @@ function finishPath(){
 function cancelPath(silent){pathPts=null;pathBar.classList.remove("show");if(!silent)render();}
 
 /* ---------- puntatore ---------- */
-const TOOL_HINT={ruler:"Clicca il primo punto e poi il secondo: compare la distanza in metri (Maiusc = angolo fisso; la scala viene da «Dimensioni campo»)",select:"Clic per selezionare, trascina per spostare (Maiusc = H/V), riquadro multiplo · freccia/tracciato: trascina i pallini",arrow:"Trascina da inizio a fine (Maiusc = angolo fisso)","arrow-ptp":"Clicca partenza e arrivo: oggetti o punti liberi","line-ptp":"Clicca partenza e arrivo: oggetti o punti liberi (linea senza punta)",path:"Clicca i punti, doppio clic o Invio per finire",row:"Trascina sul campo per tracciare la fila (Maiusc = allinea H/V) · oppure usa «Inserisci griglia» nel menu",free:"Tieni premuto e disegna a mano libera",zone:"Trascina per disegnare la zona",text:"Clicca dove inserire il testo · dimensione con A+/A− nel pannello"};
+const TOOL_HINT={hand:"Tieni premuto e trascina per spostare la vista del campo (oppure tieni premuto M da qualsiasi strumento)",ruler:"Clicca il primo punto e poi il secondo: compare la distanza in metri (Maiusc = angolo fisso; la scala viene da «Dimensioni campo»)",select:"Clic per selezionare, trascina per spostare (Maiusc = H/V), riquadro multiplo · freccia/tracciato: trascina i pallini",arrow:"Trascina da inizio a fine (Maiusc = angolo fisso)","arrow-ptp":"Clicca partenza e arrivo: oggetti o punti liberi","line-ptp":"Clicca partenza e arrivo: oggetti o punti liberi (linea senza punta)",path:"Clicca i punti, doppio clic o Invio per finire",row:"Trascina sul campo per tracciare la fila (Maiusc = allinea H/V) · oppure usa «Inserisci griglia» nel menu",free:"Tieni premuto e disegna a mano libera",zone:"Trascina per disegnare la zona",text:"Clicca dove inserire il testo · dimensione con A+/A− nel pannello"};
 function setTool(t){
   if(cropMode){cropMode=false;cropDrag=null;syncCropUi();}
   const wasLine=LINE_TOOLS.includes(currentTool),wasText=currentTool==="text";
   currentTool=t;
   document.querySelectorAll(".tool-btn").forEach(b=>b.classList.toggle("active",b.dataset.tool===t));
   cancelPath(true);ptpFirst=null;rowDrag=null;tempArrow=null;tempZone=null;freePath=null;rubber=null;drag=null;hoverPos=null;
-  setSel([]);canvas.style.cursor=t==="select"?"default":"crosshair";
+  setSel([]);canvas.style.cursor=t==="hand"?"grab":(t==="select"?"default":"crosshair");
   closeMenus();
   if(t==="text"){colorPicker.value=textColor;markPreset();}else if(LINE_TOOLS.includes(t)){colorPicker.value=lineColor;markPreset();}else if(wasLine||wasText){colorPicker.value=objColor;markPreset();}
   const eb=document.querySelector('.tool-btn[data-tool="equip"]');if(eb)eb.classList.toggle("active",EQUIP.includes(t));
@@ -21398,12 +21400,38 @@ function setTool(t){
   setStatus((b?b.textContent.replace(/[▸]/g,"").trim():(EQUIP_NAMES[t]||t))+" – "+(TOOL_HINT[t]||"Clicca sul campo per inserire"+(CLICK_ROT.includes(t)?" · clic su uno già inserito = ruota di 30°":"")));
   render();
 }
+
+/* 5.4 · Mano / pan: strumento "hand" oppure tasto M tenuto premuto */
+let panHold=false,panDrag=null,toolBeforePan=null;
+function canvasWrapEl(){return document.querySelector(".canvas-wrap");}
+function beginPan(e){
+  const wrap=canvasWrapEl();if(!wrap)return false;
+  panDrag={x:e.clientX,y:e.clientY,sl:wrap.scrollLeft,st:wrap.scrollTop,pid:e.pointerId};
+  try{if(e.target&&e.target.setPointerCapture)e.target.setPointerCapture(e.pointerId);}catch(_){}
+  canvas.style.cursor="grabbing";wrap.style.cursor="grabbing";
+  return true;
+}
+function movePan(e){
+  if(!panDrag)return false;
+  const wrap=canvasWrapEl();if(!wrap)return false;
+  wrap.scrollLeft=panDrag.sl-(e.clientX-panDrag.x);
+  wrap.scrollTop=panDrag.st-(e.clientY-panDrag.y);
+  return true;
+}
+function endPan(){
+  panDrag=null;
+  const wrap=canvasWrapEl();
+  if(panHold||currentTool==="hand"){canvas.style.cursor="grab";if(wrap)wrap.style.cursor="grab";}
+  else{canvas.style.cursor=currentTool==="select"?"default":"crosshair";if(wrap)wrap.style.cursor="";}
+}
+
 canvas.addEventListener("pointerdown",async e=>{
   if(e.button!=null&&e.button!==0)return;
   if(e.isPrimary===false)return;
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
   const pos=getMousePos(e),sh=e.shiftKey,multi=e.shiftKey||e.ctrlKey||e.metaKey;
   if(cropMode){cropDown(pos);return;}
+  if(panHold||currentTool==="hand"){beginPan(e);return;}
   if(currentTool==="select"){
     if(!multi){const hh=lineHandleAt(pos);if(hh){drag={mode:"handle",ref:hh.o.id,which:hh.which,idx:hh.idx,moved:false,start:pos};setStatus(lineHandleName(hh.which)+" – trascinalo dove vuoi (si aggancia a giocatori e attrezzi; Maiusc = angolo fisso)"+(hh.which==="mid"?" · doppio clic = toglilo":""));render();return;}}
     const hit=findObjectAt(pos.x,pos.y,{skipLocked:true});
@@ -21460,6 +21488,7 @@ canvas.addEventListener("pointerdown",async e=>{
   if(currentTool==="row"){const a=pickPoint(pos,true);rowDrag={a,b:a};render();return;}
 });
 canvas.addEventListener("pointermove",e=>{
+  if(movePan(e))return;
   const pos=getMousePos(e),sh=e.shiftKey;
   if(cropMode){cropMove(pos);return;}
   if(drag){
@@ -21492,6 +21521,7 @@ canvas.addEventListener("pointermove",e=>{
   else if(currentTool==="select")canvas.style.cursor=lineHandleAt(pos)?"pointer":(findObjectAt(pos.x,pos.y,{skipLocked:true})?"move":"default");
 });
 canvas.addEventListener("pointerup",e=>{
+  if(panDrag){endPan();return;}
   const pos=getMousePos(e),sh=e.shiftKey;
   if(cropMode){cropUp();return;}
   if(drag){
@@ -21524,7 +21554,7 @@ canvas.addEventListener("pointerup",e=>{
     render();return;}
   if(rowDrag){rowDrag.b=toolPoint(pos,sh);commitRow();rowDrag=null;render();return;}
 });
-canvas.addEventListener("pointercancel",()=>{cropDrag=null;drag=null;rubber=null;tempArrow=null;tempZone=null;freePath=null;rowDrag=null;render();});
+canvas.addEventListener("pointercancel",()=>{cropDrag=null;drag=null;rubber=null;tempArrow=null;tempZone=null;freePath=null;rowDrag=null;endPan();render();});
 canvas.addEventListener("pointerleave",()=>{if(!drag&&!rubber&&!tempArrow&&!tempZone&&!freePath&&!rowDrag){hoverPos=null;if(pathPts||ptpFirst)render();}});
 canvas.addEventListener("dblclick",async e=>{
   if(currentTool==="path"){finishPath();return;}
@@ -22039,8 +22069,18 @@ document.addEventListener("paste",e=>{const t=e.target;if(t&&/^(INPUT|TEXTAREA|S
 (function(){const w=document.querySelector(".canvas-wrap");if(!w)return;w.addEventListener("dragover",e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files"))e.preventDefault();});w.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&/^image\//.test(f.type)){e.preventDefault();loadBgFile(f);}});})();
 const EQ_KEY="calcio_attrezzi_stile";
 EQ_REAL=lsGet(EQ_KEY)!=="classic";
-function syncEqStyle(){$("eq-style").textContent=EQ_REAL?"Attrezzi: realistici":"Attrezzi: classici";}
-$("eq-style").onclick=()=>{EQ_REAL=!EQ_REAL;lsSet(EQ_KEY,EQ_REAL?"real":"classic");syncEqStyle();render();try{refreshPages();}catch(x){}setStatus(EQ_REAL?"Attrezzi: stile realistico":"Attrezzi: stile classico");};
+function syncEqStyle(){
+  const lab=$("eq-style-lab"),btn=$("eq-style");
+  const t=EQ_REAL?"Stile: realistici":"Stile: classici";
+  if(lab)lab.textContent=t;else if(btn)btn.textContent=t;
+  if(btn)btn.title=EQ_REAL?"Stile realistico attivo – clic per classici":"Stile classico attivo – clic per realistici";
+}
+if($("eq-style"))$("eq-style").onclick=e=>{
+  e.preventDefault();e.stopPropagation();
+  EQ_REAL=!EQ_REAL;lsSet(EQ_KEY,EQ_REAL?"real":"classic");syncEqStyle();render();
+  try{refreshPages();}catch(x){}
+  setStatus(EQ_REAL?"Attrezzi: stile realistico":"Attrezzi: stile classico");
+};
 syncEqStyle();
 preloadAllBg();syncBgUi();
 
@@ -22073,9 +22113,18 @@ document.addEventListener("keydown",e=>{
   if(pathPts){if(k==="Enter"){e.preventDefault();finishPath();}else if(k==="Escape")cancelPath();else if(k==="Backspace"){e.preventDefault();pathPts.pop();if(!pathPts.length)cancelPath();render();}return;}
   if(k==="Escape"){ptpFirst=null;rowDrag=null;hoverPos=null;setSel([]);render();return;}
   if((k==="Delete"||k==="Backspace")&&selected.size){e.preventDefault();deleteSelected();return;}
-  /* scorciatoie per scegliere lo strumento: Spazio seleziona, P giocatore, B cono, C cinesino, N porta grande, O pallone, F freccia punto-punto, + tracciato a più punti, A asta, S sagoma, Z zona, T testo */
+  /* M = pan temporaneo (tieni premuto) */
+  if(!e.altKey&&!e.ctrlKey&&!e.metaKey&&String(k).toLowerCase()==="m"&&!e.repeat){
+    e.preventDefault();
+    panHold=true;
+    canvas.style.cursor="grab";
+    const w=canvasWrapEl();if(w)w.style.cursor="grab";
+    setStatus("Mano: trascina per spostare il campo (rilascia M per tornare allo strumento)");
+    return;
+  }
+  /* scorciatoie per scegliere lo strumento: Spazio seleziona, P giocatore, B cono, C cinesino, N porta grande, O pallone, F freccia punto-punto, + tracciato a più punti, A asta, S sagoma, Z zona, T testo, H mano */
   if(!e.altKey&&!e.repeat&&!document.querySelector(".modal.show")){
-    const sc={" ":"select",o:"ball","+":"path",p:"player",b:"cone",c:"cinesino",n:"goal-big",f:"arrow-ptp",a:"asta",s:"sagoma",z:"zone",t:"text"}[String(k).toLowerCase()];
+    const sc={" ":"select",o:"ball","+":"path",p:"player",b:"cone",c:"cinesino",n:"goal-big",f:"arrow-ptp",a:"asta",s:"sagoma",z:"zone",t:"text",h:"hand"}[String(k).toLowerCase()];
     if(sc){
       e.preventDefault();
       if(k===" "){if(tag==="BUTTON"||tag==="SUMMARY")t.blur();if(currentTool==="select")return;}
@@ -22096,6 +22145,18 @@ document.addEventListener("keydown",e=>{
     nudge(dx,dy);
   }
 });
+
+document.addEventListener("keyup",e=>{
+  if(String(e.key).toLowerCase()!=="m")return;
+  panHold=false;
+  if(panDrag)endPan();
+  else{
+    const w=canvasWrapEl();
+    if(currentTool==="hand"){canvas.style.cursor="grab";if(w)w.style.cursor="grab";}
+    else{canvas.style.cursor=currentTool==="select"?"default":"crosshair";if(w)w.style.cursor="";}
+  }
+});
+
 var saveAsMode=false;
 function variantName(base){
   const data=getSaved(),root=String(base||"Esercizio").replace(/\s+[–-]\s+variante(?:\s+\d+)?$/,"");
