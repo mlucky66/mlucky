@@ -348,7 +348,7 @@ module.exports = async function handler(req, res) {
       systemInstruction: { parts: [{ text: ISTRUZIONI }] },
       contents: [{ role: 'user', parts: [{ text: costruisciPrompt(d) }] }],
       generationConfig: {
-        temperature: 0.7,
+        // temperature/topP/topK rimossi: sui modelli Gemini 3.x sono deprecati (ignorati o, in futuro, rifiutati con errore 400)
         // margine ampio: i modelli con "ragionamento" consumano token anche prima di rispondere
         maxOutputTokens: 8192,
         responseMimeType: 'application/json',
