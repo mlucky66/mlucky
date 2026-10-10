@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/genera.js": { "maxDuration": 60 }
+  }
+}
