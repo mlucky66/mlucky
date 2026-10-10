@@ -6065,7 +6065,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
         <div class="at-whatsnew-body">
           <p class="at-squadra-hint" style="margin:0 0 8px"><strong>5.4.3 · SSD</strong></p>
           <ul class="at-whatsnew-list">
-            <li><strong>5.4.3 · Icone uniformi</strong> — tutte le icone di menu, pulsanti e strumenti (app e editor allenamenti) hanno ora lo stesso stile a linea monocromatica, che segue i colori del tema: niente più emoji colorate né immagini diverse da dispositivo a dispositivo. Il colore resta solo per gli avvisi (ambra, rosso, verde).</li>
+            <li><strong>5.4.3 · Icone uniformi</strong> — tutte le icone di menu, pulsanti e strumenti (app e editor allenamenti) hanno ora lo stesso stile a linea monocromatica, che segue i colori del tema: niente più emoji colorate né immagini diverse da dispositivo a dispositivo. Il colore resta solo per gli avvisi (ambra, rosso, verde). Allenamenti: corretto il taglio delle immagini nell'allenamento e nel PDF (campi con misure personalizzate), zoom più compatto in prima riga, pulsante «Genera allenamento» in «Elenco allenamenti», Libreria che riparte dall'ordinamento predefinito, ricerca leggibile.</li>
             <li><strong>5.4.2 · Sicurezza e robustezza</strong> — CSV stagione: i testi che iniziano con = + - @ non vengono più interpretati come formule da Excel/Sheets; Allenamenti: se la memoria del browser è piena compare un avviso invece di perdere le modifiche in silenzio.</li>
             <li><strong>5.4.1 · Logo e pannelli</strong> — nuovo logo 5.4 AI (app, esportazioni HTML e PDF); in «Genera allenamenti» e in «Elenco allenamenti» le etichette stanno in un pannello chiudibile (chiuso all’apertura); nella bozza generata i badge colorati delle fasi con i minuti accanto al totale; in Allenamenti «Tutto il campo» (dopo «Area PDF») è ora solo un’icona.</li>
             <li><strong>5.4.0 · Generazione degli allenamenti</strong> — nuovo pulsante «Genera allenamento» (Squadra → Programmazione): propone una seduta per il giorno scelto, con obiettivo (etichette), storico e impostazioni del giorno; bozza locale oppure con AI (Gemini), poi modificabile (sostituisci, ±5′, rigenera fase) e salvabile come seduta.</li>
@@ -16588,6 +16588,7 @@ function buildRecentFormHtml(n){
   if (trSetBtn) trSetBtn.addEventListener('click', showTrainingSettingsModal);
   const genSessBtn = document.getElementById('atGenSession');
   if (genSessBtn) genSessBtn.addEventListener('click', showGenerateSessionModal);
+  window.__atGenerateSession = function(){ if (!isReadonly) showGenerateSessionModal(); }; // usato dal pulsante «Genera allenamento» dell'editor
   const restoreBtn = document.getElementById('atRestoreBackup');
   if (restoreBtn) restoreBtn.addEventListener('click', () => { showRestoreBackupModal(); });
 
@@ -17816,9 +17817,13 @@ select{background:var(--surface2);border:1px solid var(--border);padding:6px 10p
 .arrow-options button.active{background:var(--accent);color:var(--ink);border-color:var(--accent)}
 .rotate-row{display:flex;gap:3px;flex-wrap:wrap}
 .rotate-row button{background:var(--surface2);border:1px solid var(--border);padding:6px 8px;font-size:.75rem}
-.zoom-controls{display:flex;gap:4px;align-items:center;margin-left:auto}
+.zoom-controls{display:flex;gap:3px;align-items:center;margin-left:auto;flex:none}
 .tb-row1{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1 1 100%}
-.zoom-controls button{background:var(--surface2);border:1px solid var(--border);width:32px;height:32px;padding:0;font-size:1rem;font-weight:600}
+.zoom-controls button{background:var(--surface2);border:1px solid var(--border);width:26px;height:30px;padding:0;font-size:1rem;font-weight:600}
+/* 5.4.3: prima riga più compatta, così i pulsanti zoom restano sulla stessa riga */
+.tb-row1 .group{gap:2px}
+.tb-row1 .group button{padding:7px 8px}
+.tb-row1 .group button .ic{margin-right:3px}
 .zoom-label{font-size:.8rem;color:var(--muted);min-width:42px;text-align:center}
 .hint{font-size:.72rem;color:var(--muted);line-height:1.45}
 .check-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem}
@@ -17875,6 +17880,7 @@ canvas{display:block;background:#2d5a27;cursor:crosshair}
 .ph-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .ph-badge{--pc:#7a8290;--pb:#2a3a1f;padding:3px 9px;border-radius:7px;border:1.5px solid rgba(255,255,255,.28);background:transparent;color:#c3c8d0;font-size:.78rem;font-weight:600;line-height:1.35;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
 .ph-badge:hover{background:rgba(255,255,255,.07)}
+#sh-phase-badges .ph-badge{padding:2.7px 8.1px;font-size:.702rem;border-width:1.35px;border-radius:6.3px}
 .ph-badge.on{color:#fff;border-color:var(--pc);background:var(--pb)}
 .ph-badge.on:hover{background:var(--pb);filter:brightness(1.12)}
 .ph-badge[data-ph="riscaldamento"]{--pc:#3fcf3f;--pb:#0d7a0d}
@@ -17890,7 +17896,8 @@ canvas{display:block;background:#2d5a27;cursor:crosshair}
 .modal-content input[type="text"]{width:100%;padding:10px 12px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem}
 .modal-content.lib{max-width:860px;width:94%}
 .lib-tools{display:flex;gap:8px;margin:4px 0 6px}
-.lib-tools input{flex:1;min-width:0;color:var(--text)}
+.lib-tools input{flex:1;min-width:0;color:var(--text);background:#040508;border:1px solid var(--border);border-radius:6px;padding:7px 11px;font-size:.82rem;font-family:inherit}
+.lib-tools input:focus{outline:none;border-color:var(--accent)}
 #player-number{color:var(--text)}
 #player-number::placeholder,.lib-tools input::placeholder{color:var(--muted);opacity:.8}
 .lib-tools select{flex:0 0 auto;width:auto}
@@ -18257,10 +18264,10 @@ select{background:var(--panel-2)}
       <button id="btn-export" class="primary" title="Esporta la pagina corrente come immagine">PNG</button>
     </div>
     <div class="zoom-controls">
-      <button id="zoom-out">−</button>
-      <span class="zoom-label" id="zoom-label">100%</span>
-      <button id="zoom-in">+</button>
-      <button id="zoom-reset" style="width:auto;padding:0 8px;font-size:.75rem">Reset</button>
+      <button id="zoom-out" title="Riduci zoom">−</button>
+      <span class="zoom-label" id="zoom-label" hidden>100%</span>
+      <button id="zoom-in" title="Ingrandisci zoom">+</button>
+      <button id="zoom-reset" title="Riporta lo zoom al 100%" style="width:auto;padding:0 7px;font-size:.72rem">100%</button>
     </div>
     </div>
     <div class="group">
@@ -18607,7 +18614,7 @@ function rispondi(o) {
 </div>
 <div class="modal" id="modal-sessions">
   <div class="modal-content wide">
-    <h2>Elenco allenamenti</h2>
+    <div class="lib-head"><h2>Elenco allenamenti</h2><button id="sl-gen" class="primary" title="Genera automaticamente un allenamento (apre il generatore)" style="padding:5px 12px;font-size:.78rem"><i class="ic ic-sparkles" aria-hidden="true"></i> Genera allenamento</button></div>
     <input type="search" id="sessions-search" placeholder="Cerca per nome…" autocomplete="off" spellcheck="false" style="width:100%;padding:10px 12px;margin-bottom:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem">
     <details class="tag-panel" id="sessions-tag-panel"><summary>Tag disponibili <span class="tp-n"></span></summary><div class="tag-row" id="sessions-tag-filter"></div></details>
     <div class="hint" id="sessions-count" style="margin-bottom:6px"></div>
@@ -18780,8 +18787,8 @@ function cleanCrop(c,dm){
   if(w>=dm[0]*.98&&h>=dm[1]*.98)return null;
   return{x,y,w,h};
 }
-function pageCrop(pg){return cleanCrop(pg&&pg.crop,dimsFor(pg.fieldType,pg.bg));}
-function expDims(pg){const c=pageCrop(pg),d=c?[c.w,c.h]:dimsFor(pg.fieldType,pg.bg);return pageRot(pg)%180?[d[1],d[0]]:d;}
+function pageCrop(pg){return cleanCrop(pg&&pg.crop,dimsFor(pg.fieldType,pg.bg,pg.fs));}
+function expDims(pg){const c=pageCrop(pg),d=c?[c.w,c.h]:dimsFor(pg.fieldType,pg.bg,pg.fs);return pageRot(pg)%180?[d[1],d[0]]:d;}
 function pdfScale(pg,base){const c=pageCrop(pg);return c?Math.min(3,Math.max(base,900/Math.max(c.w,c.h))):base;}
 /* (le rotazioni non cambiano la lunghezza del lato maggiore) */
 function curCrop(){return cleanCrop(pages[curPage]&&pages[curPage].crop,[FIELD_W,FIELD_H]);}
@@ -18927,10 +18934,10 @@ function parseFieldMeters(s){
   if(!(a>0&&b>0&&a<=200&&b<=200))return null;
   return{w:Math.max(a,b),h:Math.min(a,b)}; /* w = lato lungo, h = corto: orientamento orizzontale di default */
 }
-function dimsFor(t,b){
+function dimsFor(t,b,fs){
   if(t==="image"&&b&&b.w&&b.h){let w=1000,h=Math.round(1000*b.h/b.w);if(h>800){h=800;w=Math.round(800*b.w/b.h);}return[Math.max(300,w),Math.max(300,h)];}
   if(t==="empty"){
-    const m=parseFieldMeters(sheet&&sheet.fieldSize);
+    const m=parseFieldMeters(fs===undefined?(sheet&&sheet.fieldSize):fs);
     if(m){ /* 40 px per metro, con limiti ragionevoli */
       const px=40,w=Math.round(m.w*px),h=Math.round(m.h*px);
       return[Math.max(320,Math.min(1400,w)),Math.max(240,Math.min(1000,h))];
@@ -19764,7 +19771,9 @@ function buildSchedaPdf(ex){
 /* tutte le pagine (fasi) dell'esercizio, senza la scelta «solo una fase» */
 function itemPagesAll(it){
   if(it.ref){const d=getSaved()[it.ref];return d?normPages(d):null;}
-  return it.pages&&it.pages.length?normPages({pages:it.pages}):null;
+  if(!(it.pages&&it.pages.length))return null;
+  const mm=/Dimensioni campo:\s*([0-9.,]+\s*[x×X]\s*[0-9.,]+)/.exec(it.meta||"");
+  return normPages({pages:it.pages,sheet:mm?{fieldSize:mm[1]}:undefined});
 }
 /* le pagine che finiscono davvero nel PDF: tutte, oppure solo quella scelta (it.page, da 0) */
 function resolveItemPages(it){
@@ -20020,9 +20029,10 @@ const CAMPO_COL={"Milleluci":[37,99,235],"Fiorano a 11":[22,163,74],"Gazzaniga a
 function newSession(){return{numero:"",data:"",campo:"",perPage:4,descrizione:"",firstOnly:false,tags:[],esito:"",nota:"",items:[]};}
 function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").toLowerCase()||"documento";}
 function cleanSheet(s){const o=blankSheet();if(s&&typeof s==="object"){Object.keys(o).forEach(k=>{if(typeof s[k]==="string")o[k]=s[k].slice(0,k==="title"?120:(k==="video"?400:3000));});o.phase=phList(o.phase).join(",");o.durMin=cleanMin(o.durMin);o.durMax=cleanMin(o.durMax);if(o.durMin&&o.durMax&&+o.durMin>+o.durMax){const t=o.durMin;o.durMin=o.durMax;o.durMax=t;}o.phasePrimary=(phList(o.phase).length>1&&phList(o.phase).includes(String(o.phasePrimary||"").toLowerCase()))?String(o.phasePrimary).toLowerCase():"";if(typeof s.showMeters==="boolean")o.showMeters=s.showMeters;else if(s.showMeters===0||s.showMeters==="0"||s.showMeters===false)o.showMeters=false;else o.showMeters=true;}return o;}
-function normPages(d){
+function normPages(d,forEditor){
+  const sfs=d&&d.sheet&&typeof d.sheet.fieldSize==="string"?d.sheet.fieldSize:undefined;
   let pgs=d&&Array.isArray(d.pages)&&d.pages.length?d.pages:[{objects:d&&d.objects,fieldType:d&&d.fieldType}];
-  pgs=pgs.slice(0,12).map(p=>{const b=cleanBg(p&&p.bg);let ft=FIELD_TYPES.includes(p&&p.fieldType)?p.fieldType:"full";if(ft==="image"&&!b)ft="full";const o={objects:normalize(p&&p.objects),fieldType:ft,caption:String((p&&p.caption)||"").slice(0,100)};if(b){o.bg=b;bgImage(b.src);}const cr=cleanCrop(p&&p.crop,dimsFor(ft,b));if(cr)o.crop=cr;const rt=Number(p&&p.rot);if(rt===90||rt===180||rt===270)o.rot=rt;return o;});
+  pgs=pgs.slice(0,12).map(p=>{const b=cleanBg(p&&p.bg);let ft=FIELD_TYPES.includes(p&&p.fieldType)?p.fieldType:"full";if(ft==="image"&&!b)ft="full";const o={objects:normalize(p&&p.objects),fieldType:ft,caption:String((p&&p.caption)||"").slice(0,100)};if(b){o.bg=b;bgImage(b.src);}const fsRaw=(p&&typeof p.fs==="string")?p.fs:sfs;if(!forEditor&&ft==="empty"&&fsRaw!==undefined)o.fs=fsRaw.slice(0,40);const cr=cleanCrop(p&&p.crop,dimsFor(ft,b,fsRaw));if(cr)o.crop=cr;const rt=Number(p&&p.rot);if(rt===90||rt===180||rt===270)o.rot=rt;return o;});
   return pgs.length?pgs:[blankPage()];
 }
 function cleanSession(s){
@@ -20045,7 +20055,7 @@ function cleanSession(s){
 
 /* ---------- disegno di una pagina su un canvas a parte ---------- */
 function pageCanvas(pg,scale,rot,useCrop){
-  const dm=dimsFor(pg.fieldType,pg.bg),cr=useCrop?pageCrop(pg):null,ar=cr||{x:0,y:0,w:dm[0],h:dm[1]},c=document.createElement("canvas");
+  const dm=dimsFor(pg.fieldType,pg.bg,pg.fs),cr=useCrop?pageCrop(pg):null,ar=cr||{x:0,y:0,w:dm[0],h:dm[1]},c=document.createElement("canvas");
   const R=(pageRot(pg)+(rot?270:0))%360,odd=R===90||R===270;
   c.width=Math.max(1,Math.round((odd?ar.h:ar.w)*scale));c.height=Math.max(1,Math.round((odd?ar.w:ar.h)*scale));
   const sv=[ctx,objects,fieldType,selected,exporting,ptpFirst,FIELD_W,FIELD_H,bg,ROT_ANG];
@@ -20110,7 +20120,7 @@ async function newExercise(){
   window.__tplName="";pages=[blankPage()];curPage=0;sheet=blankSheet();currentName="";currentTags=[];loadCurrent(false);exSnap=exState();setStatus("Nuovo esercizio");
 }
 function loadExercise(d,name){
-  window.__tplName="";pages=normPages(d);curPage=0;sheet=cleanSheet(d.sheet);currentName=name||"";currentTags=normTags(d.tags);loadCurrent(false);exSnap=exState();rememberField(pages[0]&&pages[0].fieldType);
+  window.__tplName="";pages=normPages(d,true);curPage=0;sheet=cleanSheet(d.sheet);currentName=name||"";currentTags=normTags(d.tags);loadCurrent(false);exSnap=exState();rememberField(pages[0]&&pages[0].fieldType);
   try{updateVariantNav();}catch(e){}
 }
 
@@ -20397,7 +20407,7 @@ function endLibPick(add){
   if(added){setStatus(added===1?"Aggiunto 1 esercizio":"Aggiunti "+added+" esercizi");const rows=$("se-items").querySelectorAll(".se-item"),last=rows[rows.length-1];if(last&&last.scrollIntoView){try{last.scrollIntoView({block:"nearest"});}catch(e){}}}
 }
 function addItemFromField(){
-  readSheet();const ps=snapshotPages();
+  readSheet();const ps=snapshotPages();ps.forEach(p=>{if(p.fieldType==="empty"&&sheet.fieldSize)p.fs=sheet.fieldSize;});
   if(!ps.some(p=>p.objects.length)){uiAlert("Il campo è vuoto: disegna prima l'esercizio.");return;}
   if(session.items.length>=40){uiAlert("Massimo 40 esercizi per allenamento.");return;}
   session.items.push(Object.assign({ref:null,pages:ps},itemFromSheet(sheet,currentName||"Esercizio")));renderSessionItems();
@@ -21331,7 +21341,7 @@ async function importBackup(text){
   Object.keys(src).forEach(k=>{
     if(BAD_KEYS.includes(k))return;const v=src[k];
     if(v&&typeof v==="object"&&(Array.isArray(v.pages)||Array.isArray(v.objects)))
-      clean[k.slice(0,80)]={pages:normPages(v),sheet:cleanSheet(v.sheet),tags:normTags(v.tags),savedAt:isNaN(new Date(v.savedAt))?new Date().toISOString():v.savedAt};
+      clean[k.slice(0,80)]={pages:normPages(v,true),sheet:cleanSheet(v.sheet),tags:normTags(v.tags),savedAt:isNaN(new Date(v.savedAt))?new Date().toISOString():v.savedAt};
   });
   const sess={};
   if(data.sessions&&typeof data.sessions==="object")Object.keys(data.sessions).forEach(k=>{if(BAD_KEYS.includes(k))return;const c=cleanSession(data.sessions[k]);if(c)sess[k.slice(0,80)]=c;});
@@ -21789,7 +21799,7 @@ function lastUseMap(){
   });
   return m;
 }
-function resetLibFilters(){$("lib-f-dur").value="";$("lib-f-pl").value="";$("lib-f-field").value="";if($("lib-f-use"))$("lib-f-use").value="";if($("lib-f-phase"))$("lib-f-phase").value="";}
+function resetLibFilters(){$("lib-sort").value="name";$("lib-f-dur").value="";$("lib-f-pl").value="";$("lib-f-field").value="";if($("lib-f-use"))$("lib-f-use").value="";if($("lib-f-phase"))$("lib-f-phase").value="";}
 function renderLibrary(){
   const data=getSaved(),list=$("saved-list"),q=normTxt($("lib-search").value.trim()),sort=$("lib-sort").value,tok=++libTok;
   let items=Object.keys(data).map(n=>({n,d:data[n]||{}}));
@@ -21872,6 +21882,7 @@ $("lib-search").addEventListener("input",renderLibrary);
 $("lib-sort").addEventListener("change",renderLibrary);
 ["lib-f-dur","lib-f-pl","lib-f-field","lib-f-use","lib-f-phase"].forEach(id=>{if($(id))$(id).addEventListener("change",renderLibrary);});
 $("lib-f-reset").onclick=()=>{resetLibFilters();renderLibrary();};
+$("sl-gen").onclick=()=>{try{if(window.parent===window)return;$("modal-sessions").classList.remove("show");parent.postMessage({t:"at-gen-session"},"*");}catch(e){}};
 $("cancel-load").onclick=()=>$("modal-load").classList.remove("show");
 $("btn-backup").onclick=()=>{updateBackupInfo();$("modal-backup").classList.add("show");};
 $("cancel-backup").onclick=()=>$("modal-backup").classList.remove("show");
@@ -21977,7 +21988,7 @@ function tplThumb(pagesRaw,sh){
   try{
     const pg=normPages({pages:JSON.parse(JSON.stringify(pagesRaw))})[0],sv=sheet;
     sheet=Object.assign({},blankSheet(),sh);
-    try{const dm=dimsFor(pg.fieldType,pg.bg);return pageCanvas(pg,Math.min(1,260/dm[0]),false,false).toDataURL("image/png");}
+    try{const dm=dimsFor(pg.fieldType,pg.bg,pg.fs);return pageCanvas(pg,Math.min(1,260/dm[0]),false,false).toDataURL("image/png");}
     finally{sheet=sv;}
   }catch(e){return"";}
 }
@@ -22600,6 +22611,7 @@ function updateTextRow(){
     if (!m || typeof m !== 'object') return;
     if (m.t === 'at-all-set') onSet(m.k, m.v);
     else if (m.t === 'at-all-del') onSet(m.k, null);
+    else if (m.t === 'at-gen-session') { if (typeof window.__atGenerateSession === 'function') window.__atGenerateSession(); }
   });
 
   // ── Tema: il modulo segue colori e accento di Attendance ──
