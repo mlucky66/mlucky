@@ -19804,6 +19804,7 @@ function buildSessionPdf(s){
       const key=a+"-"+b;if(drawn.has(key))return;drawn.add(key);
       const A=cellCenter(a),B=cellCenter(b);
       if(A.page!==B.page)return;
+      doc.use(A.page); /* la freccia va disegnata sulla pagina dei due esercizi, non sull'ultima */
       const col=[144,207,172]; /* verde ~50% copertura su fondo bianco */
       const rmin=Math.min(A.row,B.row),rmax=Math.max(A.row,B.row);
       let cx,cy,ux,uy;
