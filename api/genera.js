@@ -21,7 +21,7 @@ const STATI_TEMPORANEI = [429, 500, 502, 503, 504]; // errori che vale la pena r
 const TENTATIVI_PER_MODELLO = 2;
 const PAUSA_MS = 1500;
 const TIMEOUT_TEST_MS = 12000; // saluto di prova
-const TIMEOUT_GEN_MS = 25000; // singolo tentativo di generazione
+const TIMEOUT_GEN_MS = 35000; // singolo tentativo di generazione
 const BUDGET_GEN_MS = 50000; // tempo massimo complessivo della generazione (tutti i tentativi)
 const MAX_RICHIESTE_ORA = 40; // senza STAFF_CODE: freno minimo (per istanza della funzione) a tutela della quota gratuita
 const richieste = [];
@@ -351,6 +351,9 @@ module.exports = async function handler(req, res) {
         // temperature/topP/topK rimossi: sui modelli Gemini 3.x sono deprecati (ignorati o, in futuro, rifiutati con errore 400)
         // margine ampio: i modelli con "ragionamento" consumano token anche prima di rispondere
         maxOutputTokens: 8192,
+        // Gemini 3.8 Flash ragiona di default a livello "medium" e impiega molti secondi anche per risposte brevi:
+        // "low" riduce tempi e costi ("minimal" non e' supportato da 3.8 Flash e darebbe errore 400)
+        thinkingConfig: { thinkingLevel: 'low' },
         responseMimeType: 'application/json',
         responseSchema: schemaRisposta(d)
       }
