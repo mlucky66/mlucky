@@ -32,6 +32,28 @@ function troppeRichieste() {
   richieste.push(ora);
   return false;
 }
+// Freno ai tentativi con codice staff sbagliato (per istanza della funzione):
+// dopo 10 errori in 10 minuti dallo stesso indirizzo si risponde 429 anche a chi riprova.
+const MAX_ERRORI_CODICE = 10;
+const FINESTRA_ERRORI_MS = 600000;
+const errori = new Map();
+const ipDi = (req) =>
+  String((req.headers && req.headers['x-forwarded-for']) || (req.socket && req.socket.remoteAddress) || 'ignoto')
+    .split(',')[0]
+    .trim();
+function troppiErrori(ip) {
+  const ora = Date.now();
+  const l = (errori.get(ip) || []).filter((t) => ora - t < FINESTRA_ERRORI_MS);
+  if (l.length) errori.set(ip, l);
+  else errori.delete(ip);
+  return l.length >= MAX_ERRORI_CODICE;
+}
+function registraErrore(ip) {
+  const l = errori.get(ip) || [];
+  l.push(Date.now());
+  errori.set(ip, l);
+  if (errori.size > 500) errori.delete(errori.keys().next().value);
+}
 const FASI = ['riscaldamento', 'analitica', 'atletica', 'situazionale', 'tattica', 'partitella'];
 
 const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -326,7 +348,10 @@ module.exports = async function handler(req, res) {
   // ===== POST: generazione =====
   if (metodo === 'POST') {
     if (richiesto) {
+      const ip = ipDi(req);
+      if (troppiErrori(ip)) return res.status(429).json({ ok: false, errore: 'Troppi tentativi con codice errato: riprova tra qualche minuto.' });
       if (!codiceValido(req.headers['x-staff-code'], richiesto)) {
+        registraErrore(ip);
         return res.status(401).json({ ok: false, errore: 'Codice non valido.' });
       }
     } else if (troppeRichieste()) {
@@ -397,8 +422,13 @@ module.exports = async function handler(req, res) {
   // ===== GET: saluto di prova (come nella versione di test) =====
   if (metodo === 'GET') {
     if (richiesto) {
+      const ip = ipDi(req);
+      if (troppiErrori(ip)) return res.status(429).json({ ok: false, errore: 'Troppi tentativi con codice errato: riprova tra qualche minuto.' });
       const dato = (req.query && req.query.codice) || req.headers['x-staff-code'];
-      if (!codiceValido(dato, richiesto)) return res.status(401).json({ ok: false, errore: 'Codice non valido.' });
+      if (!codiceValido(dato, richiesto)) {
+        registraErrore(ip);
+        return res.status(401).json({ ok: false, errore: 'Codice non valido.' });
+      }
     }
     const corpo = {
       contents: [
