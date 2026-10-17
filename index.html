@@ -5528,6 +5528,21 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
 #atNavCampo, [data-mobile-action="nav-campo"] { display: none; }
 @media (max-width: 640px) { #atNavCampo { display: block; } [data-mobile-action="nav-campo"] { display: flex; } }
 @media (min-width: 641px) { #atCampoSection { display: none !important; } }
+/* 6.2.4 · telefono: barra in basso (Campo, Squadra, Altro), Dettaglio presenze semplificato */
+#atTabBar, #atFiltBtn, #atBackCampo, #atSqAddPlayer { display: none; }
+@media (max-width: 640px) {
+  #atMainNav, #atMobileMoreBtn, .at-sticky-nav .at-view-toggle.at-mobile-only { display: none !important; }
+  [data-mobile-action="nav-operativo"], [data-mobile-action="nav-squadra"], [data-mobile-action="nav-campo"] { display: none !important; }
+  #atTabBar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--panel, #101218); border-top: 1px solid rgba(245,247,242,0.16); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #atTabBar button { flex: 1; min-height: 52px; border: 0; background: none; color: #A3A5A2; font: inherit; font-size: 13px; cursor: pointer; }
+  #atTabBar button.active { color: #5CC2FF; font-weight: 700; }
+  #atFiltBtn, #atBackCampo { display: inline-flex; }
+  #atSqAddPlayer { display: inline-flex; margin: 0 0 10px; }
+  .at-toolbar .at-toolbar-start { display: none; }
+  .at-toolbar.at-filt-open .at-toolbar-start { display: flex; flex-wrap: wrap; gap: 8px; }
+  .at-toolbar-end #atAddPlayer, .at-toolbar-end #atDataMenu { display: none !important; }
+}
+@media (orientation: landscape) and (max-height: 500px) { #atNavAllenamenti, [data-mobile-action="nav-allenamenti"] { display: none !important; } }
 .at-wrap.readonly #atNavCampo, .at-wrap.readonly #atCampoSection, .at-wrap.readonly [data-mobile-action="nav-campo"] { display: none !important; }
 .at-campo-title { margin: 4px 0 2px; font-size: 22px; font-weight: 700; color: var(--chalk); }
 .at-campo-sub { margin: 0 0 14px; font-size: 13.5px; color: var(--chalk-dim); }
@@ -5771,6 +5786,8 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
       <div class="at-tabs" id="atTabs" role="tablist" aria-label="Mesi della stagione"></div>
     </div>
     <div class="at-toolbar-main">
+      <button type="button" class="at-btn" id="atBackCampo">‹ Campo</button>
+      <button type="button" class="at-btn" id="atFiltBtn" aria-expanded="false">Filtri</button>
       <div class="at-toolbar-start">
       <button type="button" class="at-season-chip" id="atCategoryChip" title="Vai a Squadra → Categorie">
         <span class="chip-k">Categoria</span>
@@ -6015,6 +6032,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
 
   <!-- ═══ SQUADRA (4.0 strutturata) ═══ -->
   <div id="atSquadraSection" style="display:none">
+    <button type="button" class="at-btn at-edit-only" id="atSqAddPlayer">+ Giocatore</button>
     <div class="at-squadra-intro">
       <strong>Squadra</strong> — rosa, categorie, stagioni, programmazione e impostazioni.
       Il lavoro quotidiano sulle presenze resta in <strong>Presenze</strong>; insight e report in <strong>Analisi</strong>.
@@ -6310,6 +6328,7 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
 
   <div id="atCampoSection" style="display:none" aria-label="Campo"></div>
 
+  <div id="atAllMobSection" style="display:none"><h2 class="at-campo-title">Allenamenti</h2><p class="at-campo-sub">Solo consultazione. Per creare o modificare sedute usa il computer.</p><div id="atAllMobList"></div></div>
   <div id="atAllenamentiSection" style="display:none">
     <div class="at-all-bar">
       <span class="at-all-hint">Disegna gli esercizi e componi la seduta: tutto si salva con i dati della squadra.</span>
@@ -6321,9 +6340,10 @@ table.at-match-list tr.loss td:first-child { border-left: 3px solid #D9483A; }
     </div>
   </div>
 
-  <div class="at-credit" id="atCredit"><span class="at-credit-brand"><img src="data:image/png;base64,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" alt="LM" />by mlucky</span><span class="at-credit-ver" title="Versione applicazione">v6.2.3</span></div>
+  <div class="at-credit" id="atCredit"><span class="at-credit-brand"><img src="data:image/png;base64,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" alt="LM" />by mlucky</span><span class="at-credit-ver" title="Versione applicazione">v6.2.4</span></div>
 </div>
 
+<nav id="atTabBar" aria-label="Sezioni"></nav>
 <div class="at-mobile-more-panel" id="atMobileMorePanel" aria-hidden="true">
   <div class="at-mobile-more-sheet" role="dialog" aria-label="Menu azioni">
     <div class="at-pop-sheet-handle"></div>
@@ -6546,10 +6566,10 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
       const saved = localStorage.getItem(VIEW_MODE_KEY);
       if (saved) return saved;
       // Prima apertura: su telefono preferisci Schede (meno scroll orizzontale)
-      if (typeof window !== 'undefined' && window.innerWidth < 640) return 'cards';
+      if (typeof window !== 'undefined' && window.innerWidth <= 640) return 'cards';
       return 'table';
     } catch(e){
-      return (typeof window !== 'undefined' && window.innerWidth < 640) ? 'cards' : 'table';
+      return (typeof window !== 'undefined' && window.innerWidth <= 640) ? 'cards' : 'table';
     }
   }
   function saveViewMode(v){
@@ -6564,7 +6584,7 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
   let compactMode = getSavedCompact();
   // Su schermi stretti attiva la densità compatta se l'utente non ha ancora scelto
   try {
-    if (localStorage.getItem(COMPACT_KEY) == null && window.innerWidth < 640) {
+    if (localStorage.getItem(COMPACT_KEY) == null && window.innerWidth <= 640) {
       compactMode = true;
     }
   } catch(e) {}
@@ -6897,7 +6917,7 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
     });
   }
   window.__atSignOut = signOutAccount;
-  const APP_VERSION = '6.2.3';
+  const APP_VERSION = '6.2.4';
   function syncVersionFooter(){
     // 6.2.2: la versione è scritta qui (il titolo della pagina è solo «Attendance 6»)
     const el = document.querySelector('#atCredit .at-credit-ver');
@@ -7717,6 +7737,7 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
       const sAll = document.getElementById('atAllenamentiSection');
       if (bAll && sAll && !isReadonly) buttons.push({ id: 'allenamenti', btn: bAll, section: sAll });
     })();
+    (function(){ const sM = document.getElementById('atAllMobSection'); if (sM && !isReadonly) buttons.push({ id: 'allmob', btn: { classList: { toggle: function(){} }, addEventListener: function(){} }, section: sM }); })();
     function show(section){
       // Compatibilità: vecchi id 'presenze' / 'statistiche'
       if (section === 'presenze') section = 'operativo';
@@ -7732,10 +7753,59 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
       if (headView) headView.style.display = (section === 'operativo') ? '' : 'none';
       // 4.4-e: al primo ingresso in Analisi dopo modifiche, ricalcola i pannelli pesanti
       if (section === 'analisi') ensureAnalisiRendered(true);
+      if (section === 'allmob') { try { renderAllMob(); } catch (e) { console.warn(e); } }
+      try { if (window.__atTabSync) window.__atTabSync(section); } catch (e) { /* non bloccante */ }
       if (section === 'campo') { campoView = 'home'; try { renderCampo(); } catch (e) { console.warn(e); } }
       if (typeof window.__atAllenamentiShow === 'function') { try { window.__atAllenamentiShow(section === 'allenamenti'); } catch (e) { console.warn(e); } }
     }
     showMainSection = show;
+    /* 6.2.4 · telefono: barra in basso, Filtri, Squadra, elenco sedute in sola consultazione */
+    function renderAllMob(){
+      const h = document.getElementById('atAllMobList'); if (!h) return;
+      let L = []; try { L = (window.__atSessions && window.__atSessions.all) ? window.__atSessions.all() : []; } catch (e) { L = []; }
+      h.innerHTML = '';
+      if (!L.length) { const p = document.createElement('p'); p.className = 'at-campo-sub'; p.textContent = 'Nessuna seduta salvata.'; h.appendChild(p); return; }
+      L.forEach(function(x){
+        const c = document.createElement('div'); c.className = 'at-campo-card';
+        const t = document.createElement('div'); t.className = 'ct'; t.textContent = 'Seduta' + (x.numero ? ' n. ' + x.numero : ' \u2013 ' + x.name);
+        const d = document.createElement('div'); d.className = 'cs'; d.textContent = (x.data || 'senza data') + ' \u00b7 ' + x.esercizi + (x.esercizi === 1 ? ' esercizio' : ' esercizi') + (x.min ? ' \u00b7 ' + x.min + ' min' : '');
+        const r = document.createElement('div'); r.style.cssText = 'display:flex;gap:8px;margin-top:10px';
+        [['Campo', 'field'], ['PDF', 'pdf']].forEach(function(a){
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'at-btn'; b.textContent = a[0];
+          b.addEventListener('click', function(){ if (typeof window.__atAllenamentiCmd !== 'function') return; show('allenamenti'); window.__atAllenamentiCmd({ cmd: a[1], name: x.name }); });
+          r.appendChild(b);
+        });
+        c.appendChild(t); c.appendChild(d); c.appendChild(r); h.appendChild(c);
+      });
+    }
+    (function(){
+      const bar = document.getElementById('atTabBar');
+      if (bar) {
+        const defs = isReadonly ? [['Presenze', 'operativo'], ['Altro', 'altro']] : [['Campo', 'campo'], ['Squadra', 'squadra'], ['Altro', 'altro']];
+        bar.innerHTML = '';
+        defs.forEach(function(d){
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = d[0]; b.setAttribute('data-tab', d[1]);
+          b.addEventListener('click', function(){ if (d[1] === 'altro') { const m = document.getElementById('atMobileMoreBtn'); if (m) m.click(); } else show(d[1]); });
+          bar.appendChild(b);
+        });
+        window.__atTabSync = function(sec){
+          const t = (sec === 'operativo' && !isReadonly) ? 'campo' : (sec === 'analisi' || sec === 'allmob' || sec === 'allenamenti') ? 'altro' : sec;
+          bar.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === t); });
+        };
+      }
+      const fb = document.getElementById('atFiltBtn'), tb = document.querySelector('.at-toolbar');
+      if (fb && tb) fb.addEventListener('click', function(){ const on = tb.classList.toggle('at-filt-open'); fb.setAttribute('aria-expanded', on ? 'true' : 'false'); });
+      const bk = document.getElementById('atBackCampo');
+      if (bk) { if (isReadonly) bk.style.display = 'none'; else bk.addEventListener('click', function(){ show('campo'); }); }
+      const sp = document.getElementById('atSqAddPlayer'), ap = document.getElementById('atAddPlayer');
+      if (sp && ap) sp.addEventListener('click', function(){ ap.click(); });
+      try {
+        if (window.innerWidth <= 640) {
+          const cm = document.getElementById('atViewCardsM'); if (cm && !cm.classList.contains('active') && typeof data !== 'undefined' && data) cm.click();
+          if (!isReadonly) show('campo'); else if (window.__atTabSync) window.__atTabSync(currentMainSection);
+        }
+      } catch (e) { /* non bloccante */ }
+    })();
     buttons.forEach(function(b){
       b.btn.addEventListener('click', function(){ show(b.id); });
     });
@@ -7858,6 +7928,7 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
         html += '<button type="button" class="at-campo-card go" data-campo="field" data-sess="' + escapeHTML(x.name) + '"><div class="ct"><i>▶</i> ' + escapeHTML(title) + '</div><div class="cs">' + x.esercizi + (x.esercizi === 1 ? ' esercizio' : ' esercizi') + (mn > 0 ? ' · ' + mn + '\u2032' : '') + '</div></button>';
       });
     }
+    html += '<button type="button" class="at-campo-card" data-campo="dettaglio"><div class="ct">Dettaglio presenze</div><div class="cs">Infortuni, gol, altri stati</div></button>' + (info ? '' : '<button type="button" class="at-campo-card" data-campo="evento"><div class="ct">+ Evento</div><div class="cs">Aggiungi un allenamento o una partita</div></button>');
     html += '<button type="button" class="at-campo-card cal" data-campo="cal"><div class="ct">Calendario</div><div class="cs">Scegli il giorno da vedere</div></button>';
     host.innerHTML = html;
   }
@@ -7880,6 +7951,8 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
       if (!b || b.disabled) return;
       const act = b.getAttribute('data-campo');
       if (act === 'presenze') { campoView = 'presenze'; renderCampo(); }
+      else if (act === 'dettaglio') { showMainSection('operativo'); }
+      else if (act === 'evento') { showMainSection('operativo'); const ae = document.getElementById('atAddEvent'); if (ae) ae.click(); }
       else if (act === 'back') { campoView = 'home'; renderCampo(); }
       else if (act === 'cal') { campoView = 'cal'; campoPickISO = null; campoCalYM = null; renderCampo(); }
       else if (act === 'calprev' || act === 'calnext') {
@@ -9239,7 +9312,7 @@ window.atLocalYMD = function(d){ d = d || new Date(); var m = d.getMonth() + 1, 
   function openPopover(anchorEl, playerId, eventId){
     if (isReadonly) return;
     closeAnyPopover();
-    const useSheet = window.innerWidth < 640;
+    const useSheet = window.innerWidth <= 640;
     const pop = document.createElement('div');
     pop.className = 'at-pop' + (useSheet ? ' at-pop-sheet' : '');
 
@@ -17076,7 +17149,7 @@ function buildRecentFormHtml(n){
         if (act === 'nav-operativo') { if (typeof showMainSection === 'function') showMainSection('operativo'); return; }
         if (act === 'nav-squadra') { if (typeof showMainSection === 'function') showMainSection('squadra'); return; }
         if (act === 'nav-analisi') { if (typeof showMainSection === 'function') showMainSection('analisi'); return; }
-        if (act === 'nav-allenamenti') { if (typeof showMainSection === 'function') showMainSection('allenamenti'); return; }
+        if (act === 'nav-allenamenti') { if (typeof showMainSection === 'function') showMainSection(window.innerWidth <= 640 ? 'allmob' : 'allenamenti'); return; }
         if (act === 'nav-campo') { if (typeof showMainSection === 'function') showMainSection('campo'); return; }
         if (act === 'settings') {
           if (typeof showMainSection === 'function') showMainSection('squadra');
@@ -17106,7 +17179,7 @@ function buildRecentFormHtml(n){
   // Su mobile, porta in vista gli input quando arriva la tastiera
   document.addEventListener('focusin', (e) => {
     const t = e.target;
-    if (!t || window.innerWidth >= 640) return;
+    if (!t || window.innerWidth > 640) return;
     if (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA' && t.tagName !== 'SELECT') return;
     setTimeout(() => {
       try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(_) {}
@@ -18070,7 +18143,7 @@ function buildRecentFormHtml(n){
     const d = document.getElementById('atBootShield'); if (d && d.parentNode) d.parentNode.removeChild(d);
   }
   function earlyUiPrep(){   // stessi preparativi che init fa più avanti, così la prima schermata non cambia aspetto dopo
-    try { if (!localStorage.getItem(VIEW_MODE_KEY) && window.innerWidth < 640) viewMode = 'cards'; } catch (e) {}
+    try { if (!localStorage.getItem(VIEW_MODE_KEY) && window.innerWidth <= 640) viewMode = 'cards'; } catch (e) {}
     ['atLegends', 'atMonths', 'atMatchStats', 'atSeason'].forEach(function(id){ const el = document.getElementById(id); if (el) el.open = false; });
     const ss = document.getElementById('atSort'); if (ss) ss.value = sortMode;
   }
@@ -18193,7 +18266,7 @@ function buildRecentFormHtml(n){
     if (sortSel) sortSel.value = sortMode;
     // Preferisci vista Schede su mobile al primo avvio se non salvata
     try {
-      if (!localStorage.getItem(VIEW_MODE_KEY) && window.innerWidth < 640) {
+      if (!localStorage.getItem(VIEW_MODE_KEY) && window.innerWidth <= 640) {
         viewMode = 'cards';
       }
     } catch(e) { /* */ }
@@ -18383,6 +18456,8 @@ function buildRecentFormHtml(n){
       refreshHint(true);
     } else if (c.cmd === 'field') {
       if (typeof fieldFromName === 'function') fieldFromName(c.name);
+    } else if (c.cmd === 'pdf') {
+      if (typeof loadSessionByName === 'function') { closeModals(); loadSessionByName(c.name); refreshHint(true); var pb = $('se-pdf'); if (pb) setTimeout(function(){ pb.click(); }, 400); }
     }
   }
 
@@ -24318,6 +24393,7 @@ function updateTextRow(){
   }
   window.__atSessions = {
     byDate: sessionsOn,
+    all: function(){ var o = []; Object.keys(mem[KEY_SEDUTE]).forEach(function(n){ var s0 = mem[KEY_SEDUTE][n]; if (!s0 || typeof s0 !== 'object') return; var its = Array.isArray(s0.items) ? s0.items : [], mn = 0; its.forEach(function(it){ mn += (it && parseFloat(it.min)) || 0; }); o.push({ name: n, data: String(s0.data || ''), numero: String(s0.numero || ''), esercizi: its.length, min: Math.round(mn) }); }); o.sort(function(a, b){ return a.data < b.data ? 1 : (a.data > b.data ? -1 : 0); }); return o; },
     setDate: function(name, iso){
       var s = mem[KEY_SEDUTE][name];
       if (!s || typeof s !== 'object') return false;
